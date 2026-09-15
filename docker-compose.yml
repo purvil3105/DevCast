@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: devcast-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devcast
+      POSTGRES_PASSWORD: devcast_dev
+      POSTGRES_DB: devcast
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: devcast-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+
+  rtmp:
+    build: ./media-server
+    container_name: devcast-rtmp
+    restart: unless-stopped
+    ports:
+      - '1935:1935'
+      - '8080:8080'
+    volumes:
+      - ./media-server/nginx.conf:/etc/nginx/nginx.conf:ro
+    environment:
+      # Used by s3_upload.sh to authenticate to the API server
+      - INTERNAL_API_SECRET=dev-internal-secret-change-me
+      # Use the container name for docker networking
+      - API_URL=http://api:3000/api/streams
+
+  api:
+    build: ./server
+    container_name: devcast-api
+    restart: unless-stopped
+    command: npm run start:api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - PORT=3000
+      - NODE_ENV=development # development allows the weak secret below to pass the fail-fast check
+      - DATABASE_URL=postgresql://devcast:devcast_dev@postgres:5432/devcast?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=devcast-dev-secret-change-in-production
+      - INTERNAL_API_SECRET=dev-internal-secret-change-me
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+      - WS_PUBLIC_URL=${WS_PUBLIC_URL:-ws://localhost:3001}
+      - SANDBOX_URL=http://sandbox:4000
+      
+  ws:
+    build: ./server
+    container_name: devcast-ws
+    restart: unless-stopped
+    command: npm run start:ws
+    ports:
+      - '3001:3001'
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - WS_PORT=3001
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://devcast:devcast_dev@postgres:5432/devcast?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=devcast-dev-secret-change-in-production
+      - INTERNAL_API_SECRET=dev-internal-secret-change-me
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost}
+
+  sandbox:
+    build: ./sandbox
+    container_name: devcast-sandbox
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    volumes:
+      # Mount the host Docker socket so the sandbox can spawn isolation containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PORT=4000
+
+  client:
+    build:
+      context: ./client
+      args:
+        # Pass build-time variables for Vite
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:3001}
+    container_name: devcast-client
+    restart: unless-stopped
+    ports:
+      - '80:80'
+
+volumes:
+  pgdata:

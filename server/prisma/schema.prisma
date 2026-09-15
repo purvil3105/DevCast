@@ -1,0 +1,190 @@
+// ─── Prisma Schema for DevCast ────────────────────────────
+// Matches system design document §5 exactly
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users and Auth ──────────────────────────────────────
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  password    String   // bcrypt hash
+  displayName String   @map("display_name")
+  role        Role     @default(VIEWER)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  courses             Course[]
+  submissions         Submission[]
+  leaderboardEntries  LeaderboardEntry[]
+
+  @@map("users")
+}
+
+enum Role {
+  INSTRUCTOR @map("instructor")
+  VIEWER     @map("viewer")
+}
+
+// ─── Courses ─────────────────────────────────────────────
+
+model Course {
+  id           String   @id @default(uuid()) @db.Uuid
+  instructorId String   @map("instructor_id") @db.Uuid
+  title        String
+  slug         String   @unique
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  instructor  User        @relation(fields: [instructorId], references: [id])
+  streams     Stream[]
+  challenges  Challenge[]
+
+  @@index([instructorId]) // GET /courses/my filters by instructor
+  @@map("courses")
+}
+
+// ─── Live Streams ────────────────────────────────────────
+
+model Stream {
+  id        String       @id @default(uuid()) @db.Uuid
+  courseId   String       @map("course_id") @db.Uuid
+  title     String
+  streamKey String       @unique @map("stream_key")
+  hlsUrl    String?      @map("hls_url")
+  vodUrl    String?      @map("vod_url")
+  thumbnailUrl String?   @map("thumbnail_url")
+  status    StreamStatus @default(SCHEDULED)
+  startedAt DateTime?    @map("started_at")
+  endedAt   DateTime?    @map("ended_at")
+
+  course            Course             @relation(fields: [courseId], references: [id])
+  challengeSessions ChallengeSession[]
+  events            StreamEvent[]
+
+  @@index([courseId]) // FK lookups
+  @@index([status])   // GET /streams?status= filter
+  @@map("streams")
+}
+
+enum StreamStatus {
+  SCHEDULED @map("scheduled")
+  LIVE      @map("live")
+  ENDED     @map("ended")
+}
+
+// ─── Stream Events (VOD Sync) ────────────────────────────
+
+model StreamEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  streamId    String   @map("stream_id") @db.Uuid
+  type        String
+  seq         Int
+  payload     Json
+  serverTime  DateTime @map("server_time")
+
+  stream      Stream   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@index([streamId, seq])
+  @@map("stream_events")
+}
+
+// ─── Challenge Definitions ───────────────────────────────
+
+model Challenge {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  title       String
+  description String
+  language    String   @db.VarChar(20)
+  starterCode String?  @map("starter_code")
+  config      Json     // { test_cases: [{input, expected_output}], time_limit_ms }
+  staticHints Json?    @map("static_hints") // ["Hint 1", "Hint 2"]
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  course            Course             @relation(fields: [courseId], references: [id])
+  challengeSessions ChallengeSession[]
+
+  @@index([courseId]) // listChallenges filters by course
+  @@map("challenges")
+}
+
+// ─── Challenge Sessions (triggered within a stream) ──────
+
+model ChallengeSession {
+  id          String                @id @default(uuid()) @db.Uuid
+  streamId    String                @map("stream_id") @db.Uuid
+  challengeId String                @map("challenge_id") @db.Uuid
+  startedAt   DateTime              @default(now()) @map("started_at")
+  endedAt     DateTime?             @map("ended_at")
+  status      ChallengeSessionStatus @default(ACTIVE)
+  durationSeconds Int               @default(120) @map("duration_seconds")
+
+  stream      Stream       @relation(fields: [streamId], references: [id])
+  challenge   Challenge    @relation(fields: [challengeId], references: [id])
+  submissions Submission[]
+  leaderboardEntries LeaderboardEntry[]
+
+  @@index([streamId])    // FK lookups
+  @@index([challengeId]) // FK lookups
+  @@map("challenge_sessions")
+}
+
+enum ChallengeSessionStatus {
+  ACTIVE @map("active")
+  CLOSED @map("closed")
+}
+
+// ─── Submissions ─────────────────────────────────────────
+
+model Submission {
+  id                 String           @id @default(uuid()) @db.Uuid
+  challengeSessionId String           @map("challenge_session_id") @db.Uuid
+  userId             String           @map("user_id") @db.Uuid
+  code               String
+  language           String           @db.VarChar(20)
+  testResults        Json?            @map("test_results")
+  executionTimeMs    Int?             @map("execution_time_ms")
+  aiHint             String?          @map("ai_hint")
+  aiScore            Decimal?         @map("ai_score") @db.Decimal(3, 2)
+  aiEvaluatedAt      DateTime?        @map("ai_evaluated_at")
+  status             SubmissionStatus @default(PENDING)
+  submittedAt        DateTime         @default(now()) @map("submitted_at")
+
+  challengeSession ChallengeSession @relation(fields: [challengeSessionId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
+
+  // The composite unique also indexes challengeSessionId as its leftmost prefix,
+  // so the leaderboard's "by challenge session" query is already covered — no
+  // separate @@index([challengeSessionId]) needed.
+  @@unique([challengeSessionId, userId]) // one submission per user per challenge
+  @@map("submissions")
+}
+
+enum SubmissionStatus {
+  PENDING      @map("pending")
+  EXECUTED     @map("executed")
+  AI_EVALUATED @map("ai_evaluated")
+  ERROR        @map("error")
+}
+
+// ─── Leaderboard Entries ─────────────────────────────────
+
+model LeaderboardEntry {
+  challengeSessionId String   @map("challenge_session_id") @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  score              Int
+  rank               Int?
+  submittedAt        DateTime? @map("submitted_at")
+
+  challengeSession ChallengeSession @relation(fields: [challengeSessionId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
+
+  @@id([challengeSessionId, userId])
+  @@map("leaderboard_entries")
+}

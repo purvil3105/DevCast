@@ -1,0 +1,29 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+client/.env
+client/.env.*.local
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+.claude/
+
+# Prisma
+server/prisma/migrations/
+
+# Runtime uploads and generated reports
+uploads/
+coverage/
+
+# Vite
+client/.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
