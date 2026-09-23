@@ -1,0 +1,50 @@
+# Caddyfile for DevCast Self-Hosted Production
+# DOMAIN environment variable is automatically substituted from .env.prod
+{$DOMAIN} {
+    # ── API REST Endpoints ──────────────────────────────
+    handle /api/* {
+        reverse_proxy api:3000 {
+            health_uri /api/health
+            health_interval 15s
+        }
+    }
+
+    # ── Socket.IO WebSocket ─────────────────────────────
+    handle /socket.io/* {
+        reverse_proxy ws:3001 {
+            header_up Host {upstream_hostport}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # ── Live HLS Streaming ──────────────────────────────
+    handle /hls/* {
+        root * /var/hls/live
+        uri strip_prefix /hls
+        file_server
+        header Access-Control-Allow-Origin *
+        header Cache-Control "no-cache, no-store, must-revalidate"
+    }
+
+    # ── Recorded VOD Playback ───────────────────────────
+    handle /vod/* {
+        root * /var/hls/vod
+        uri strip_prefix /vod
+        file_server
+        header Access-Control-Allow-Origin *
+        header Cache-Control "public, max-age=86400"
+    }
+
+    # ── React SPA Client (Static HTML/JS/CSS) ───────────
+    handle {
+        reverse_proxy client:80
+    }
+
+    # ── Logging with File Rotation ───────────────────────
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 20MB
+            roll_keep 5
+        }
+    }
+}

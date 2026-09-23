@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { SpotlightCard } from '../components/landing/SpotlightCard';
 import { StatsBar } from '../components/landing/StatsBar';
 import { StreamSimulator } from '../components/landing/StreamSimulator';
-import { BrandMark } from '../components/BrandMark';
 import { useTypewriter } from '../hooks/useTypewriter';
 
 const featureList = [
@@ -84,11 +83,13 @@ export function LandingPage() {
 
       {/* Sticky Blur Navbar */}
       <header className={`landing-nav ${scrolled ? 'scrolled' : ''}`}>
-        <Link to="/" className="landing-brand">
-          <BrandMark size={32} />
-          <span>
-            Dev<span>Cast</span>
-          </span>
+        <Link to="/" className="landing-brand" aria-label="DevCast Home">
+          <img
+            src="/logo-dark.png"
+            alt="DevCast"
+            className="landing-brand-logo"
+            style={{ height: 32, width: 'auto', display: 'block' }}
+          />
         </Link>
 
         <nav>
@@ -247,18 +248,13 @@ export function LandingPage() {
 
       {/* Clean Footer */}
       <footer className="landing-footer">
-        <Link to="/" className="landing-brand">
+        <Link to="/" className="landing-footer-brand" aria-label="DevCast Home">
           <img
-            src="/icon.png"
+            src="/logo-dark.png"
             alt="DevCast"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = '/devcast-logo.png';
-            }}
+            className="landing-footer-logo"
+            style={{ height: 28, width: 'auto', display: 'block' }}
           />
-          <span>
-            Dev<span>Cast</span>
-          </span>
         </Link>
 
         <span>Live coding · Real learning · Verifiable progress</span>

@@ -312,5 +312,11 @@ export async function listChallengeSessions() {
   return data.sessions;
 }
 
+// ─── Reactions ───────────────────────────────────────────
+export async function sendReaction(streamId: string, emoji: string) {
+  const { data } = await api.post(`/streams/${streamId}/reaction`, { emoji });
+  return data;
+}
+
 export default api;
 

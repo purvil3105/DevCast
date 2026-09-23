@@ -1,0 +1,205 @@
+# docker-compose.prod.yml
+# Production Docker Compose topology for DevCast
+# Optimized for Oracle Cloud Always Free ARM64 (Ampere A1) and standard Linux VMs
+
+name: devcast
+
+services:
+  # ── PostgreSQL 16 ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: devcast-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devcast}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: devcast
+    volumes:
+      - /opt/devcast/data/postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-devcast} -d devcast"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Redis 7 ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: devcast-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy noeviction
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - /opt/devcast/data/redis:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── One-Shot Database Migration ─────────────────────────────
+  migrate:
+    build:
+      context: ./server
+      target: runner
+    container_name: devcast-migrate
+    restart: "no"
+    command: sh -c "npx prisma db push --skip-generate"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devcast}:${POSTGRES_PASSWORD}@postgres:5432/devcast?schema=public
+    networks:
+      - internal
+
+  # ── REST API ────────────────────────────────────────────────
+  api:
+    build:
+      context: ./server
+      target: runner
+    container_name: devcast-api
+    restart: unless-stopped
+    command: npm run start:api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devcast}:${POSTGRES_PASSWORD}@postgres:5432/devcast?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      CORS_ORIGIN: https://${DOMAIN}
+      WS_PUBLIC_URL: wss://${DOMAIN}
+      SANDBOX_URL: http://sandbox:4000
+      VOD_BASE_URL: https://${DOMAIN}/vod
+    volumes:
+      - /opt/devcast/data/hls:/var/hls:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── WebSocket Server ─────────────────────────────────────────
+  ws:
+    build:
+      context: ./server
+      target: runner
+    container_name: devcast-ws
+    restart: unless-stopped
+    command: npm run start:ws
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      WS_PORT: "3001"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-devcast}:${POSTGRES_PASSWORD}@postgres:5432/devcast?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      CORS_ORIGIN: https://${DOMAIN}
+    networks:
+      - internal
+
+  # ── Sandbox (Code Runner) ───────────────────────────────────
+  sandbox:
+    build:
+      context: ./sandbox
+    container_name: devcast-sandbox
+    restart: unless-stopped
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/devcast/data/sandbox-tmp:/tmp
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+
+  # ── RTMP / HLS Media Server ─────────────────────────────────
+  rtmp:
+    build:
+      context: ./media-server
+    container_name: devcast-rtmp
+    restart: unless-stopped
+    environment:
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      API_URL: http://api:3000/api/streams
+      VOD_BASE_URL: https://${DOMAIN}/vod
+    volumes:
+      - /opt/devcast/data/hls:/var/hls
+      - ./media-server/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "1935:1935"
+    networks:
+      - internal
+
+  # ── React SPA Client ────────────────────────────────────────
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ""
+        VITE_WS_URL: ""
+    container_name: devcast-client
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # ── Caddy Reverse Proxy & TLS ───────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: devcast-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - /opt/devcast/data/hls:/var/hls:ro
+    networks:
+      - internal
+    depends_on:
+      - api
+      - ws
+      - client
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

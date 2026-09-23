@@ -64,6 +64,17 @@ export function LoginPage() {
         {/* Right Panel: Clean High-Contrast Auth Form */}
         <div className="auth-right-panel">
           <div className="auth-form-card">
+            {/* Prominent DevCast Logo */}
+            <div className="auth-brand-lockup">
+              <Link to="/" title="DevCast — Back to Home">
+                <img
+                  src="/logo-dark.png"
+                  alt="DevCast"
+                  className="auth-logo-large"
+                />
+              </Link>
+            </div>
+
             <div className="auth-form-header">
               <h2>{isRegister ? 'Create your account' : 'Welcome back'}</h2>
               <p>

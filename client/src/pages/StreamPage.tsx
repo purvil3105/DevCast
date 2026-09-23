@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Code2, AlertCircle } from 'lucide-react';
+import { Users, Code2, AlertCircle, Copy, Check, Share2, Eye, EyeOff } from 'lucide-react';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { CodeEditor } from '../components/CodeEditor';
 import { ChallengePanel } from '../components/ChallengePanel';
@@ -8,6 +8,7 @@ import { ResultsPanel } from '../components/ResultsPanel';
 import { Leaderboard } from '../components/Leaderboard';
 import { InstructorChallengeView } from '../components/InstructorChallengeView';
 import { CreateChallengeModal } from '../components/CreateChallengeModal';
+import { FloatingReactionsOverlay, ReactionBar, type ReactionParticle } from '../components/LiveReactions';
 import { useSocket } from '../hooks/useSocket';
 import { useStreamState } from '../hooks/useStreamState';
 import {
@@ -34,11 +35,68 @@ export function StreamPage() {
   const user = getStoredUser();
   const isInstructorRole = user?.role === 'INSTRUCTOR';
   const { state, dispatch, handleServerEvent, setSubmissionResult } = useStreamState();
-  const { connected, reconnecting } = useSocket({
+
+  // Floating live reactions state
+  const [particles, setParticles] = useState<ReactionParticle[]>([]);
+
+  // Clipboard copy feedback state
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isKeyVisible, setIsKeyVisible] = useState(false);
+
+  const addReactionParticle = useCallback((emoji: string) => {
+    const newParticle: ReactionParticle = {
+      id: `p-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      emoji,
+      x: Math.floor(Math.random() * 28) + 66, // 66% - 94% on bottom-right of video
+      size: Math.floor(Math.random() * 8) + 24, // 24px - 32px
+      duration: Math.random() * 0.4 + 1.8, // 1.8s - 2.2s
+      drift: (Math.random() - 0.5) * 40,
+    };
+
+    setParticles((prev) => [...prev.slice(-25), newParticle]);
+
+    setTimeout(() => {
+      setParticles((prev) => prev.filter((p) => p.id !== newParticle.id));
+    }, 2200);
+  }, []);
+
+  const handleSocketEvent = useCallback(
+    (event: any) => {
+      if (event.type === 'stream_reaction' && event.emoji) {
+        addReactionParticle(event.emoji);
+        return;
+      }
+      handleServerEvent(event);
+    },
+    [addReactionParticle, handleServerEvent]
+  );
+
+  const { connected, reconnecting, emit } = useSocket({
     streamId: streamId || '',
-    onEvent: handleServerEvent,
+    onEvent: handleSocketEvent,
     enabled: !!streamId,
   });
+
+  const handleSendReaction = useCallback(
+    (emoji: string) => {
+      addReactionParticle(emoji);
+      emit('send_reaction', { emoji });
+    },
+    [addReactionParticle, emit]
+  );
+
+  const handleCopy = useCallback(async (text: string, fieldName: string) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => {
+        setCopiedField((prev) => (prev === fieldName ? null : prev));
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  }, []);
 
   const [streamInfo, setStreamInfo] = useState<any>(null);
 
@@ -274,12 +332,14 @@ export function StreamPage() {
         flexDirection: 'column',
         background: 'black',
       }}>
-        {/* Video Player */}
+        {/* Video Player with Live Floating Reactions */}
         <VideoPlayer 
           hlsUrl={state.hlsUrl} 
           isLive={state.status === 'live'} 
           onTimeUpdate={isVod ? setVideoTime : undefined} 
-        />
+        >
+          <FloatingReactionsOverlay particles={particles} />
+        </VideoPlayer>
 
         {/* Chat & Instructor Controls */}
         <div style={{
@@ -312,12 +372,41 @@ export function StreamPage() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
-              color: 'var(--gray-500)',
+              gap: 10,
             }}>
-              <Users size={14} />
-              {state.viewerCount}
+              {/* Share stream button */}
+              <button
+                type="button"
+                onClick={() => handleCopy(window.location.href, 'share')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: copiedField === 'share' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                  color: copiedField === 'share' ? '#4ade80' : 'var(--gray-400)',
+                  border: `1px solid ${copiedField === 'share' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Copy shareable stream link"
+              >
+                {copiedField === 'share' ? <Check size={11} /> : <Share2 size={11} />}
+                <span>{copiedField === 'share' ? 'Copied Link!' : 'Share'}</span>
+              </button>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                color: 'var(--gray-500)',
+              }}>
+                <Users size={14} />
+                {state.viewerCount}
+              </div>
             </div>
           </div>
 
@@ -393,18 +482,142 @@ export function StreamPage() {
                       fontSize: 12,
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 8,
+                      gap: 12,
                     }}>
-                      <div>
-                        <span style={{ color: 'var(--gray-500)', fontWeight: 500 }}>RTMP Server:</span>
-                        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--gray-300)', marginTop: 2 }}>rtmp://localhost:1935/live</div>
+                      {/* RTMP Server */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--gray-400)', fontWeight: 500, fontSize: 11 }}>RTMP Server URL:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy('rtmp://localhost:1935/live', 'rtmp')}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: copiedField === 'rtmp' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                              border: `1px solid ${copiedField === 'rtmp' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                              color: copiedField === 'rtmp' ? '#4ade80' : 'var(--gray-300)',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {copiedField === 'rtmp' ? <Check size={11} /> : <Copy size={11} />}
+                            <span>{copiedField === 'rtmp' ? 'Copied!' : 'Copy'}</span>
+                          </button>
+                        </div>
+                        <div style={{
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--gray-300)',
+                          background: 'var(--gray-950)',
+                          padding: '6px 8px',
+                          borderRadius: 4,
+                          fontSize: 11,
+                          border: '1px solid var(--gray-800)',
+                          userSelect: 'all',
+                        }}>
+                          rtmp://localhost:1935/live
+                        </div>
                       </div>
-                      <div>
-                        <span style={{ color: 'var(--gray-500)', fontWeight: 500 }}>Stream Key:</span>
-                        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--indigo-400)', marginTop: 2, wordBreak: 'break-all' }}>{streamInfo?.streamKey || 'Loading...'}</div>
+
+                      {/* Stream Key */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--gray-400)', fontWeight: 500, fontSize: 11 }}>Stream Key:</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => setIsKeyVisible(!isKeyVisible)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                background: 'rgba(255, 255, 255, 0.06)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                color: 'var(--gray-300)',
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                cursor: 'pointer',
+                              }}
+                              title={isKeyVisible ? 'Hide stream key' : 'Show stream key'}
+                            >
+                              {isKeyVisible ? <EyeOff size={11} /> : <Eye size={11} />}
+                              <span>{isKeyVisible ? 'Hide' : 'Show'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(streamInfo?.streamKey || '', 'key')}
+                              disabled={!streamInfo?.streamKey}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                background: copiedField === 'key' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                                border: `1px solid ${copiedField === 'key' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(99, 102, 241, 0.3)'}`,
+                                color: copiedField === 'key' ? '#4ade80' : 'var(--indigo-300)',
+                                padding: '2px 8px',
+                                borderRadius: 4,
+                                fontSize: 11,
+                                cursor: !streamInfo?.streamKey ? 'not-allowed' : 'pointer',
+                                fontWeight: 500,
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {copiedField === 'key' ? <Check size={11} /> : <Copy size={11} />}
+                              <span>{copiedField === 'key' ? 'Copied Key!' : 'Copy Key'}</span>
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--indigo-400)',
+                          background: 'var(--gray-950)',
+                          padding: '6px 8px',
+                          borderRadius: 4,
+                          fontSize: 11,
+                          border: '1px solid var(--gray-800)',
+                          wordBreak: 'break-all',
+                          userSelect: 'all',
+                        }}>
+                          {streamInfo?.streamKey
+                            ? isKeyVisible
+                              ? streamInfo.streamKey
+                              : '••••••••••••••••••••••••••••••••'
+                            : 'Loading stream key...'}
+                        </div>
                       </div>
-                      <div style={{ marginTop: 4 }}>
-                        <span style={{ color: 'var(--gray-500)', fontWeight: 500 }}>HLS Playback URL:</span>
+
+                      {/* HLS Playback URL */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--gray-400)', fontWeight: 500, fontSize: 11 }}>HLS Playback URL:</span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(hlsUrlInput, 'hls')}
+                            disabled={!hlsUrlInput}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              background: copiedField === 'hls' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                              border: `1px solid ${copiedField === 'hls' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                              color: copiedField === 'hls' ? '#4ade80' : 'var(--gray-300)',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              cursor: !hlsUrlInput ? 'not-allowed' : 'pointer',
+                              opacity: !hlsUrlInput ? 0.5 : 1,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {copiedField === 'hls' ? <Check size={11} /> : <Copy size={11} />}
+                            <span>{copiedField === 'hls' ? 'Copied URL!' : 'Copy URL'}</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           placeholder="https://.../index.m3u8"
@@ -412,7 +625,6 @@ export function StreamPage() {
                           onChange={(e) => setHlsUrlInput(e.target.value)}
                           style={{
                             width: '100%',
-                            marginTop: 4,
                             padding: '6px 8px',
                             background: 'var(--gray-950)',
                             border: '1px solid var(--gray-800)',
@@ -572,8 +784,13 @@ export function StreamPage() {
             )}
           </div>
 
+          {/* Live Reactions Bar */}
+          <div style={{ marginTop: 12, display: 'flex', justifyContent: 'center' }}>
+            <ReactionBar onSendReaction={handleSendReaction} disabled={!connected} />
+          </div>
+
           {/* Chat input */}
-          <div style={{ marginTop: 12 }}>
+          <div style={{ marginTop: 10 }}>
             <form onSubmit={handleSendChat} style={{ display: 'flex', gap: 8 }}>
               <input
                 type="text"

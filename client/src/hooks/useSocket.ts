@@ -80,6 +80,7 @@ export function useSocket({ streamId, onEvent, enabled = true }: UseSocketOption
       'stream_end',
       'chat_message',
       'event_replay',
+      'stream_reaction',
     ];
 
     for (const type of eventTypes) {

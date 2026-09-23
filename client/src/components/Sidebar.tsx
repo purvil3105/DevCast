@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { LayoutDashboard, Radio, Terminal, Trophy, Settings, Sun, Moon } from 'lucide-react';
-import { BrandMark } from './BrandMark';
 
 interface SidebarProps {
   currentView: string;
@@ -38,12 +37,28 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
       gap: 32,
     }}>
       {/* Logo Area */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 6 }}>
-        <BrandMark size={36} />
-        <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center' }}>
-          <span style={{ color: 'var(--text-main)' }}>Dev</span>
-          <span style={{ color: 'var(--indigo-500)' }}>Cast</span>
-        </span>
+      <div
+        onClick={() => onNavigate('home')}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: 6,
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+        title="DevCast Dashboard"
+      >
+        <img
+          src={isLightMode ? '/logo-light.png' : '/logo-dark.png'}
+          alt="DevCast"
+          style={{
+            height: 32,
+            width: 'auto',
+            display: 'block',
+            objectFit: 'contain',
+            transition: 'opacity 0.2s ease',
+          }}
+        />
       </div>
 
       {/* Navigation */}

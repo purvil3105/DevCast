@@ -403,15 +403,37 @@ textarea::placeholder {
   letter-spacing: -0.035em;
 }
 
-.landing-brand img {
-  width: 28px;
-  height: 28px;
-  object-fit: cover;
-  border-radius: 6px;
+.landing-brand-logo {
+  height: 32px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+  display: block;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
 }
 
-.landing-brand span span {
-  color: var(--indigo-400);
+.landing-brand:hover .landing-brand-logo {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.landing-footer-brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.landing-footer-logo {
+  height: 28px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  display: block;
+  transition: opacity 180ms ease;
+}
+
+.landing-footer-brand:hover .landing-footer-logo {
+  opacity: 0.88;
 }
 
 .landing-nav nav {
@@ -1538,6 +1560,28 @@ textarea::placeholder {
   margin: 0 auto;
   padding-top: 12px;
   padding-bottom: 40px;
+}
+
+.auth-brand-lockup {
+  margin-bottom: 28px;
+}
+
+.auth-brand-lockup a {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.auth-logo-large {
+  height: 44px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+}
+
+.auth-logo-large:hover {
+  transform: translateY(-1px) scale(1.02);
+  opacity: 0.92;
 }
 
 .auth-form-header {

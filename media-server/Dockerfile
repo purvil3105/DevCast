@@ -1,7 +1,25 @@
-FROM tiangolo/nginx-rtmp
+# media-server/Dockerfile
+# Multi-arch compatible (linux/amd64 and linux/arm64) for Debian Bookworm
+FROM debian:bookworm-slim
 
-# Install FFmpeg for real-time video transcoding (Debian base)
-RUN echo "deb http://archive.debian.org/debian bullseye main" > /etc/apt/sources.list && \
-    apt-get clean && apt-get update -o Acquire::Check-Valid-Until=false && \
-    apt-get install -y ffmpeg curl awscli && \
-    rm -rf /var/lib/apt/lists/*
+# Install Nginx with RTMP module, FFmpeg, curl and dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    libnginx-mod-rtmp \
+    ffmpeg \
+    curl \
+    bash \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Create directory tree for HLS fragments, VOD storage, raw recordings, and logs
+RUN mkdir -p /var/hls/live /var/hls/vod /var/hls/recordings /var/log/nginx /tmp/hls /tmp/recordings
+
+# Copy custom Nginx configuration and VOD processing script
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY vod_process.sh /etc/nginx/vod_process.sh
+RUN chmod +x /etc/nginx/vod_process.sh
+
+EXPOSE 1935 8080
+
+CMD ["nginx", "-g", "daemon off;"]

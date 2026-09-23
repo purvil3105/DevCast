@@ -6,6 +6,7 @@ interface VideoPlayerProps {
   hlsUrl: string | null;
   isLive?: boolean;
   onTimeUpdate?: (currentTime: number) => void;
+  children?: React.ReactNode;
 }
 
 interface QualityLevel {
@@ -22,7 +23,7 @@ interface QualityLevel {
  * - Fullscreen toggle
  * - Quality selector (Auto + available HLS levels)
  */
-export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlayerProps) {
+export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -629,6 +630,7 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
           </button>
         </div>
       </div>
+      {children}
     </div>
   );
 }

@@ -60,6 +60,10 @@ async function main() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // Friendly root response so opening localhost:3000 in a browser doesn't show
   // the confusing Express "Cannot GET /" error page.
   app.get('/', (_req, res) => {

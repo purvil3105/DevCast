@@ -327,6 +327,44 @@ router.post(
 );
 
 /**
+ * POST /api/streams/:streamId/reaction
+ * Broadcast an ephemeral live reaction (e.g. ❤️, 🔥, 👏, 🚀).
+ */
+router.post(
+  '/:streamId/reaction',
+  authenticate,
+  async (req: Request, res: Response) => {
+    try {
+      const streamId = req.params.streamId as string;
+      const { emoji } = req.body;
+
+      if (!emoji || typeof emoji !== 'string') {
+        res.status(400).json({ error: 'emoji is required' });
+        return;
+      }
+
+      const { getIO } = await import('../lib/socket');
+      try {
+        const io = getIO();
+        io.to(`stream:${streamId}`).emit('stream_reaction', {
+          id: `react_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          emoji: emoji.slice(0, 8),
+          userId: req.userId,
+          timestamp: Date.now(),
+        });
+      } catch (e) {
+        // Socket server may not be initialized in certain testing environments
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Reaction error:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+/**
  * POST /api/streams/rtmp/auth
  * nginx-rtmp `on_publish` callback. Fires BEFORE nginx accepts a broadcast.
  * nginx sends application/x-www-form-urlencoded with `name` = the stream key.

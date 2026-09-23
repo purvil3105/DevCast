@@ -104,6 +104,17 @@ export function initSocketIO(httpServer: HttpServer): Server {
       socket.emit('pong_server', { serverTime: Date.now() });
     });
 
+    socket.on('send_reaction', (data: { emoji: string }) => {
+      if (!data?.emoji || typeof data.emoji !== 'string') return;
+      const emoji = data.emoji.slice(0, 8);
+      io.to(`stream:${streamId}`).emit('stream_reaction', {
+        id: `react_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        emoji,
+        userId,
+        timestamp: Date.now(),
+      });
+    });
+
     // ─── Disconnect ───────────────────────────────────────
     socket.on('disconnect', async () => {
       console.log(`🔌 WS disconnected: user=${userId.substring(0, 8)}`);
