@@ -13,6 +13,11 @@ export interface ActiveChallenge {
   startedAt: number; // UTC ms
   sessionId: string;
   solutionCode?: string;
+  sampleTestCases?: Array<{
+    input: string;
+    expected_output: string;
+    description?: string;
+  }>;
 }
 
 export interface MySubmission {
@@ -103,6 +108,7 @@ function streamReducer(state: StreamState, action: StreamAction): StreamState {
               startedAt: currentChallenge.startedAt,
               sessionId: currentChallenge.sessionId,
               solutionCode: currentChallenge.solutionCode,
+              sampleTestCases: currentChallenge.sampleTestCases || [],
             }
           : null,
         mySubmission: mySubmission || null,
@@ -124,6 +130,7 @@ function streamReducer(state: StreamState, action: StreamAction): StreamState {
           durationSeconds,
           startedAt,
           sessionId,
+          sampleTestCases: challenge.sampleTestCases || [],
         },
         mySubmission: null,
         lastSeq: action.payload.seq ?? state.lastSeq,

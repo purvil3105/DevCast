@@ -4,8 +4,39 @@ import { redis } from '../lib/redis';
 import { authenticate, requireRole, requireStreamOwner } from '../middleware/auth';
 import { challengeTriggerRateLimit } from '../middleware/rateLimit';
 import { publishStreamEvent } from '../lib/socket';
+import { generateChallengeTestCases } from '../services/ai-worker';
 
 const router = Router();
+
+/**
+ * POST /api/challenges/generate-testcases
+ * Generate starter code and test cases using AI / template models.
+ */
+router.post(
+  '/generate-testcases',
+  authenticate,
+  requireRole('INSTRUCTOR'),
+  async (req: Request, res: Response) => {
+    try {
+      const { title, description, language } = req.body;
+      if (!title || !language) {
+        res.status(400).json({ error: 'title and language are required' });
+        return;
+      }
+
+      const generated = await generateChallengeTestCases(
+        String(title).trim(),
+        String(description || '').trim(),
+        String(language).trim().toLowerCase()
+      );
+
+      res.json(generated);
+    } catch (err) {
+      console.error('Generate test cases error:', err);
+      res.status(500).json({ error: 'Failed to generate test cases' });
+    }
+  }
+);
 
 /**
  * GET /api/challenges
@@ -173,6 +204,11 @@ router.post(
         challenge_started_at: session.startedAt.getTime().toString(),
       });
 
+      const challengeConfig = challenge.config as any;
+      const sampleTestCases = Array.isArray(challengeConfig?.test_cases)
+        ? challengeConfig.test_cases
+        : [];
+
       // Publish challenge_start event to all viewers
       const seq = await publishStreamEvent(streamId, 'challenge_start', {
         sessionId: session.id,
@@ -182,6 +218,7 @@ router.post(
           description: challenge.description,
           starterCode: challenge.starterCode,
           language: challenge.language,
+          sampleTestCases,
         },
         durationSeconds,
         startedAt: session.startedAt.getTime(),

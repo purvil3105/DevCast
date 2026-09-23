@@ -123,6 +123,8 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
         startedAt: stream.startedAt,
         endedAt: stream.endedAt,
         course: stream.course,
+        instructorId: stream.course.instructor.id,
+        isOwner,
         challengeSessions: stream.challengeSessions,
         viewerCount: Math.max(0, parseInt(viewerCount || '0', 10)),
         ...(isOwner ? { streamKey: stream.streamKey } : {}),
@@ -200,6 +202,29 @@ router.patch(
     try {
       const streamId = req.params.streamId as string;
       const { hlsUrl } = req.body;
+
+      // Enforce limit: Instructors may only have 1 LIVE stream at any given time.
+      const existingLiveStream = await prisma.stream.findFirst({
+        where: {
+          status: 'LIVE',
+          course: {
+            instructorId: req.userId,
+          },
+          id: { not: streamId },
+        },
+        select: {
+          id: true,
+          title: true,
+        },
+      });
+
+      if (existingLiveStream) {
+        res.status(409).json({
+          error: `You already have an active live stream ("${existingLiveStream.title}"). Instructors may only have 1 live stream at a time. Please end your active stream before going live with another.`,
+          activeStreamId: existingLiveStream.id,
+        });
+        return;
+      }
 
       const stream = await prisma.stream.update({
         where: { id: streamId },
@@ -323,11 +348,35 @@ router.post(
 
       const stream = await prisma.stream.findUnique({
         where: { streamKey },
-        select: { status: true },
+        select: {
+          id: true,
+          status: true,
+          course: {
+            select: { instructorId: true },
+          },
+        },
       });
 
       if (!stream || stream.status === 'ENDED') {
         res.status(403).send('Invalid or ended stream key');
+        return;
+      }
+
+      // Enforce 1 live stream limit: check if the instructor is already broadcasting another live stream
+      const otherLiveStream = await prisma.stream.findFirst({
+        where: {
+          status: 'LIVE',
+          course: {
+            instructorId: stream.course.instructorId,
+          },
+          id: { not: stream.id },
+        },
+        select: { id: true },
+      });
+
+      if (otherLiveStream) {
+        console.warn(`[RTMP] Rejected stream broadcast: instructor ${stream.course.instructorId} already has active live stream ${otherLiveStream.id}`);
+        res.status(409).send('Instructor already has an active live stream');
         return;
       }
 

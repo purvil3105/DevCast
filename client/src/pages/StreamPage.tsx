@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Code2 } from 'lucide-react';
+import { Users, Code2, AlertCircle } from 'lucide-react';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { CodeEditor } from '../components/CodeEditor';
 import { ChallengePanel } from '../components/ChallengePanel';
@@ -32,14 +32,25 @@ export function StreamPage() {
   const { streamId } = useParams<{ streamId: string }>();
   const navigate = useNavigate();
   const user = getStoredUser();
-  const isInstructor = user?.role === 'INSTRUCTOR';
-
+  const isInstructorRole = user?.role === 'INSTRUCTOR';
   const { state, dispatch, handleServerEvent, setSubmissionResult } = useStreamState();
   const { connected, reconnecting } = useSocket({
     streamId: streamId || '',
     onEvent: handleServerEvent,
     enabled: !!streamId,
   });
+
+  const [streamInfo, setStreamInfo] = useState<any>(null);
+
+  // An instructor is only treated as stream owner if they created this stream's course.
+  // Other instructors viewing this stream are treated as normal viewers.
+  const isStreamOwner = Boolean(
+    isInstructorRole && (
+      streamInfo?.isOwner === true ||
+      streamInfo?.course?.instructor?.id === user?.id ||
+      streamInfo?.instructorId === user?.id
+    )
+  );
 
   const [code, setCode] = useState('');
   const [running, setRunning] = useState(false);
@@ -49,11 +60,11 @@ export function StreamPage() {
   const [viewerTab, setViewerTab] = useState<'my-code' | 'solution'>('my-code');
   const [recentSessionId, setRecentSessionId] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<any[]>([]);
-  const [streamInfo, setStreamInfo] = useState<any>(null);
   const [hlsUrlInput, setHlsUrlInput] = useState('');
 
   // Loading states
   const [isGoingLive, setIsGoingLive] = useState(false);
+  const [goLiveError, setGoLiveError] = useState<string | null>(null);
   const [isEndingStream, setIsEndingStream] = useState(false);
   const [pushingChallengeId, setPushingChallengeId] = useState<string | null>(null);
   const [isEndingChallenge, setIsEndingChallenge] = useState(false);
@@ -202,11 +213,17 @@ export function StreamPage() {
   const handleGoLive = useCallback(async () => {
     if (!streamId) return;
     setIsGoingLive(true);
+    setGoLiveError(null);
     try {
       await goLive(streamId, hlsUrlInput);
       const updated = await getStream(streamId);
       setStreamInfo(updated);
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to go live.';
+      setGoLiveError(errorMessage);
       console.error('Go live failed:', err);
     } finally {
       setIsGoingLive(false);
@@ -344,8 +361,8 @@ export function StreamPage() {
               </div>
             )}
 
-            {/* Instructor Controls */}
-            {isInstructor && (
+            {/* Instructor Controls (only visible to stream owner) */}
+            {isStreamOwner && (
               <div style={{
                 marginTop: 16,
                 padding: 16,
@@ -425,6 +442,24 @@ export function StreamPage() {
                     >
                       {isGoingLive ? '⏳ Going Live...' : '🔴 Go Live'}
                     </button>
+                    {goLiveError && (
+                      <div style={{
+                        marginTop: 8,
+                        padding: '8px 10px',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 6,
+                        color: 'var(--red-400)',
+                        fontSize: 12,
+                        lineHeight: 1.4,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 6,
+                      }}>
+                        <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span>{goLiveError}</span>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <button
@@ -586,11 +621,14 @@ export function StreamPage() {
         minWidth: 0,
         height: '100%',
       }}>
-        {/* ── INSTRUCTOR: active challenge → show InstructorChallengeView ── */}
-        {isInstructor && state.currentChallenge ? (
+        {/* ── INSTRUCTOR (Stream Owner only): active challenge → show InstructorChallengeView ── */}
+        {isStreamOwner && state.currentChallenge ? (
           <InstructorChallengeView
             streamId={streamId!}
-            challenge={state.currentChallenge!}
+            challenge={{
+              ...state.currentChallenge!,
+              testCases: state.currentChallenge!.sampleTestCases,
+            }}
             serverTimeOffset={state.serverTimeOffset}
             onEndChallenge={handleEndChallenge}
             isEndingChallenge={isEndingChallenge}

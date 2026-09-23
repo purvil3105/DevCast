@@ -312,3 +312,139 @@ export async function closeAIWorker(): Promise<void> {
   if (aiWorker) await aiWorker.close();
   if (aiQueue) await aiQueue.close();
 }
+
+/**
+ * Automatically generate starter code and sample test cases using Gemini AI
+ * based on challenge title, description, and target language.
+ */
+export async function generateChallengeTestCases(
+  title: string,
+  description: string,
+  language: string
+): Promise<{
+  starterCode: string;
+  testCases: Array<{ input: string; expected_output: string; description: string }>;
+}> {
+  if (!config.geminiApiKey) {
+    return generateFallbackChallengeData(title, language);
+  }
+
+  try {
+    const prompt = `
+Generate programming challenge configuration for:
+Title: "${title}"
+Description: "${description}"
+Language: "${language}"
+
+Guidelines for language execution:
+- javascript: Solution exports a single function with module.exports = function funcName(...) { ... }
+- python: Solution defines a single function def func_name(...):
+- cpp: Solution is a complete program that reads input from argv[1] or stdin, and prints output to stdout via cout.
+
+Output a valid JSON object only with this exact schema:
+{
+  "starterCode": "starter code string with function signature or main structure",
+  "testCases": [
+    {
+      "input": "input argument(s) formatted as comma-separated values or string",
+      "expected_output": "expected return value or stdout string",
+      "description": "short description of the test case"
+    }
+  ]
+}
+`.trim();
+
+    const model = getGenAI().getGenerativeModel({
+      model: config.geminiModel,
+      generationConfig: {
+        maxOutputTokens: 600,
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const result = await model.generateContent(prompt);
+    let rawText = result.response.text().trim();
+    if (rawText.startsWith('```')) {
+      rawText = rawText.replace(/^```[a-z]*\n/i, '').replace(/\n?```$/i, '');
+    }
+
+    const parsed = JSON.parse(rawText);
+    if (parsed && Array.isArray(parsed.testCases) && parsed.testCases.length > 0) {
+      return {
+        starterCode: parsed.starterCode || getStarterTemplate(language),
+        testCases: parsed.testCases.map((tc: any, index: number) => ({
+          input: String(tc.input ?? ''),
+          expected_output: String(tc.expected_output ?? ''),
+          description: String(tc.description ?? `Test case ${index + 1}`),
+        })),
+      };
+    }
+  } catch (error) {
+    console.warn('AI challenge generation failed, using fallback template:', (error as Error).message);
+  }
+
+  return generateFallbackChallengeData(title, language);
+}
+
+function getStarterTemplate(language: string): string {
+  if (language === 'javascript') {
+    return 'module.exports = function solve(input) {\n  // Your code here\n};';
+  }
+  if (language === 'python') {
+    return 'def solve(input_data):\n    # Your code here\n    pass';
+  }
+  return '#include <iostream>\n#include <string>\n\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    if (argc < 2) return 0;\n    string input = argv[1];\n    // Your code here\n    return 0;\n}';
+}
+
+function generateFallbackChallengeData(title: string, language: string) {
+  const isReverseString = title.toLowerCase().includes('reverse');
+  const isPalindrome = title.toLowerCase().includes('palindrome');
+
+  if (isReverseString) {
+    let starterCode = '';
+    if (language === 'javascript') {
+      starterCode = 'module.exports = function reverseString(str) {\n  return str.split("").reverse().join("");\n};';
+    } else if (language === 'python') {
+      starterCode = 'def reverse_string(s):\n    return s[::-1]';
+    } else {
+      starterCode = '#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    if (argc < 2) return 0;\n    string s = argv[1];\n    reverse(s.begin(), s.end());\n    cout << s;\n    return 0;\n}';
+    }
+    return {
+      starterCode,
+      testCases: [
+        { input: '"hello"', expected_output: '"olleh"', description: 'Single word' },
+        { input: '"DevCast"', expected_output: '"tsaCveD"', description: 'Mixed case' },
+        { input: '"12345"', expected_output: '"54321"', description: 'Numeric string' },
+      ],
+    };
+  }
+
+  if (isPalindrome) {
+    let starterCode = '';
+    if (language === 'javascript') {
+      starterCode = 'module.exports = function isPalindrome(str) {\n  const clean = str.toLowerCase().replace(/[^a-z0-9]/g, "");\n  return clean === clean.split("").reverse().join("");\n};';
+    } else if (language === 'python') {
+      starterCode = 'def is_palindrome(s):\n    clean = "".join(c.lower() for c in s if c.isalnum())\n    return clean == clean[::-1]';
+    } else {
+      starterCode = '#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    if (argc < 2) return 0;\n    string s = argv[1];\n    string rev = s;\n    reverse(rev.begin(), rev.end());\n    cout << (s == rev ? "true" : "false");\n    return 0;\n}';
+    }
+    return {
+      starterCode,
+      testCases: [
+        { input: '"racecar"', expected_output: 'true', description: 'Simple palindrome' },
+        { input: '"hello"', expected_output: 'false', description: 'Non-palindrome word' },
+        { input: '"madam"', expected_output: 'true', description: 'Classic palindrome' },
+      ],
+    };
+  }
+
+  return {
+    starterCode: getStarterTemplate(language),
+    testCases: [
+      { input: '"hello"', expected_output: '"hello"', description: 'Sample case 1' },
+      { input: '"test"', expected_output: '"test"', description: 'Sample case 2' },
+      { input: '"123"', expected_output: '"123"', description: 'Sample case 3' },
+    ],
+  };
+}

@@ -182,6 +182,14 @@ export async function createChallenge(challenge: any) {
   return data.challenge;
 }
 
+export async function generateTestCases(title: string, description: string, language: string) {
+  const { data } = await api.post('/challenges/generate-testcases', { title, description, language });
+  return data as {
+    starterCode: string;
+    testCases: Array<{ input: string; expected_output: string; description: string }>;
+  };
+}
+
 export async function triggerChallenge(streamId: string, challengeId: string, durationSeconds: number = 120) {
   const { data } = await api.post(`/challenges/${streamId}/trigger`, {
     challengeId,

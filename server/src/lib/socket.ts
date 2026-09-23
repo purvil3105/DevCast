@@ -186,6 +186,11 @@ async function sendSessionSnapshot(socket: Socket, streamId: string, userId: str
       });
 
       if (cs) {
+        const challengeConfig = cs.challenge.config as any;
+        const sampleTestCases = Array.isArray(challengeConfig?.test_cases)
+          ? challengeConfig.test_cases
+          : [];
+
         currentChallenge = {
           sessionId: cs.id,
           id: cs.challenge.id,
@@ -196,6 +201,7 @@ async function sendSessionSnapshot(socket: Socket, streamId: string, userId: str
           durationSeconds: cs.durationSeconds,
           startedAt: cs.startedAt.getTime(),
           solutionCode: session.solution_code || undefined,
+          sampleTestCases,
         };
       }
     } catch (err) {
