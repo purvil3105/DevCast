@@ -44,12 +44,25 @@ router.post(
   requireRole('INSTRUCTOR'),
   handleUpload,
   async (req: Request, res: Response) => {
-    if (!cloudinaryConfigured) {
-      res.status(503).json({ error: 'Image uploads are not configured on this server.' });
-      return;
-    }
     if (!req.file) {
       res.status(400).json({ error: 'No image file provided (field name must be "image").' });
+      return;
+    }
+
+    if (!cloudinaryConfigured) {
+      // Fallback: save locally
+      const fs = require('fs');
+      const path = require('path');
+      const uploadDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      
+      const filename = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      fs.writeFileSync(path.join(uploadDir, filename), req.file.buffer);
+      
+      // Return the local URL
+      const host = req.get('host');
+      const protocol = req.protocol;
+      res.status(201).json({ url: `${protocol}://${host}/uploads/${filename}` });
       return;
     }
 

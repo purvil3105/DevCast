@@ -438,7 +438,7 @@ function ChallengeModal({ challenge, status, best, last, live, onClose, onJoinLi
           {live ? (
             <button
               onClick={() => onJoinLive(live.streamId)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 20px', background: 'var(--grad-brand)', color: '#fff', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--glow-violet)' }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 20px', background: 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))', color: '#fff', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--glow-violet)' }}
             >
               <Radio size={16} /> Join live session
             </button>

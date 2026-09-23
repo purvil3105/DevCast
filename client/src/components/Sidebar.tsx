@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, PlayCircle, Code2, Trophy, Settings, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Radio, Terminal, Trophy, Settings, Sun, Moon } from 'lucide-react';
+import { BrandMark } from './BrandMark';
 
 interface SidebarProps {
   currentView: string;
@@ -37,54 +38,36 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
       gap: 32,
     }}>
       {/* Logo Area */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 8 }}>
-        <div style={{
-          borderRadius: 12,
-          boxShadow: 'var(--glow-violet)',
-          flexShrink: 0,
-          lineHeight: 0,
-        }}>
-          <div style={{ width: 40, height: 40, overflow: 'hidden', position: 'relative', borderRadius: 12 }}>
-            <img
-              src="/devcast-logo.png"
-              alt="DevCast"
-              style={{ position: 'absolute', width: 102, maxWidth: 'none', height: 'auto', left: -31, top: -3 }}
-            />
-          </div>
-        </div>
-        <span style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-0.02em' }}>
-          <span style={{ color: 'var(--gray-200)' }}>Dev</span>
-          <span style={{
-            background: 'var(--grad-brand)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent',
-          }}>Cast</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 6 }}>
+        <BrandMark size={36} />
+        <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center' }}>
+          <span style={{ color: 'var(--text-main)' }}>Dev</span>
+          <span style={{ color: 'var(--indigo-500)' }}>Cast</span>
         </span>
       </div>
 
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
         <SidebarItem
-          icon={<LayoutDashboard size={20} />}
+          icon={<LayoutDashboard size={19} />}
           label="Dashboard"
           active={currentView === 'home'}
           onClick={() => onNavigate('home')}
         />
         <SidebarItem
-          icon={<PlayCircle size={20} />}
+          icon={<Radio size={19} />}
           label="Live Sessions"
           active={currentView === 'stream'}
           onClick={() => onNavigate('stream')}
         />
         <SidebarItem
-          icon={<Code2 size={20} />}
+          icon={<Terminal size={19} />}
           label="Challenges"
           active={currentView === 'challenges'}
           onClick={() => onNavigate('challenges')}
         />
         <SidebarItem
-          icon={<Trophy size={20} />}
+          icon={<Trophy size={19} />}
           label="Leaderboards"
           active={currentView === 'leaderboards'}
           onClick={() => onNavigate('leaderboards')}
@@ -100,12 +83,12 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
         width: '100%',
       }}>
         <SidebarItem 
-          icon={isLightMode ? <Moon size={20} /> : <Sun size={20} />} 
+          icon={isLightMode ? <Moon size={19} /> : <Sun size={19} />} 
           label={isLightMode ? "Dark Mode" : "Light Mode"} 
           onClick={toggleTheme} 
         />
         <SidebarItem
-          icon={<Settings size={20} />}
+          icon={<Settings size={19} />}
           label="Settings"
           active={currentView === 'settings'}
           onClick={() => onNavigate('settings')}
@@ -131,11 +114,11 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
             width: 36,
             height: 36,
             borderRadius: '50%',
-            background: 'var(--indigo-600)',
+            background: 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
+            color: '#ffffff',
             fontSize: 14,
             fontWeight: 600,
             border: '2px solid var(--gray-800)',
@@ -145,7 +128,7 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
             {userInitial}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--gray-300)' }} className="truncate">{userName}</span>
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-main)' }} className="truncate">{userName}</span>
           </div>
         </div>
       </div>
@@ -175,6 +158,7 @@ function SidebarItem({ icon, label, active, onClick }: {
         cursor: 'pointer',
         fontWeight: active ? 600 : 500,
         fontSize: 14,
+        border: 'none',
       }}
       onMouseEnter={(e) => {
         if (!active) {

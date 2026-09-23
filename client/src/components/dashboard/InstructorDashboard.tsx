@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Radio, CalendarClock, Plus, Video, Users, ArrowRight, Code2, Trophy,
-  Clock, PlayCircle, Presentation, History,
+  Radio, CalendarClock, Plus, Video, Users, ArrowRight, Trophy,
+  Clock, PlayCircle, Presentation, History, Layers, Terminal,
 } from 'lucide-react';
 import { listStreams, getStoredUser, type StreamSummary } from '../../lib/api';
 import { relativeTime } from '../../lib/format';
@@ -58,7 +58,7 @@ export function InstructorDashboard() {
 
   const quickActions = [
     { icon: <Plus size={18} />, label: 'Create stream', desc: 'Set up a new session', onClick: () => setShowCreateModal(true), primary: true },
-    { icon: <Code2 size={18} />, label: 'Browse challenges', desc: 'Review the problem library', onClick: () => navigate('/challenges'), primary: false },
+    { icon: <Terminal size={18} />, label: 'Browse challenges', desc: 'Review the problem library', onClick: () => navigate('/challenges'), primary: false },
     { icon: <Trophy size={18} />, label: 'Leaderboards', desc: 'See how learners rank', onClick: () => navigate('/leaderboards'), primary: false },
   ];
 
@@ -87,12 +87,7 @@ export function InstructorDashboard() {
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'var(--grad-brand)', color: '#fff', padding: '10px 20px',
-            borderRadius: 'var(--r-xl)', fontSize: 14, fontWeight: 600, border: 'none',
-            cursor: 'pointer', boxShadow: 'var(--glow-violet)', whiteSpace: 'nowrap',
-          }}
+          className="btn-create-stream"
         >
           <Plus size={18} /> Create Stream
         </button>
@@ -101,10 +96,10 @@ export function InstructorDashboard() {
       {/* Overview */}
       <section style={{ marginBottom: 40 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-          <StatCard label="Your streams" value={mine.length} icon={<Video size={16} />} accent="violet" hint="all time" />
-          <StatCard label="Live now" value={myLive.length} icon={<Radio size={16} />} accent={myLive.length ? 'red' : 'neutral'} hint={myLive.length ? 'on air' : 'idle'} />
-          <StatCard label="Scheduled" value={myScheduled.length} icon={<CalendarClock size={16} />} accent="yellow" hint="upcoming" />
-          <StatCard label="Watching now" value={totalLiveViewers.toLocaleString()} icon={<Users size={16} />} accent="cyan" hint="across live sessions" />
+          <StatCard label="Your streams" value={mine.length} icon={<Layers size={17} />} accent="violet" hint="all time" />
+          <StatCard label="Live now" value={myLive.length} icon={<Radio size={17} />} accent={myLive.length ? 'red' : 'neutral'} hint={myLive.length ? 'on air' : 'idle'} />
+          <StatCard label="Scheduled" value={myScheduled.length} icon={<CalendarClock size={17} />} accent="yellow" hint="upcoming" />
+          <StatCard label="Watching now" value={totalLiveViewers.toLocaleString()} icon={<Users size={17} />} accent="cyan" hint="across live sessions" />
         </div>
       </section>
 
@@ -125,7 +120,13 @@ export function InstructorDashboard() {
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-brand)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = a.primary ? 'var(--border-brand)' : 'var(--gray-800)'; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 'var(--r-sm)', background: a.primary ? 'var(--grad-brand)' : 'var(--indigo-500-10)', color: a.primary ? '#fff' : 'var(--indigo-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: a.primary ? 'var(--glow-violet)' : 'none' }}>
+              <span style={{
+                width: 40, height: 40, flexShrink: 0, borderRadius: 'var(--r-sm)',
+                background: a.primary ? 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))' : 'var(--indigo-500-10)',
+                color: a.primary ? '#ffffff' : 'var(--indigo-500)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: a.primary ? 'var(--glow-violet)' : 'none',
+              }}>
                 {a.icon}
               </span>
               <span style={{ minWidth: 0 }}>
@@ -159,7 +160,8 @@ export function InstructorDashboard() {
             action={
               <button
                 onClick={() => setShowCreateModal(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 'var(--r-xl)', background: 'var(--grad-brand)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--glow-violet)' }}
+                className="btn-create-stream"
+                style={{ fontSize: 13, padding: '9px 18px' }}
               >
                 <Plus size={16} /> Create your first stream
               </button>
@@ -247,8 +249,8 @@ function SessionRow({ stream, onOpen }: { stream: StreamSummary; onOpen: (id: st
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0,
           padding: '9px 16px', borderRadius: 'var(--r-sm)', fontSize: 13, fontWeight: 600,
-          background: isLive ? 'var(--grad-brand)' : 'var(--indigo-500-10)',
-          color: isLive ? '#fff' : 'var(--indigo-400)',
+          background: isLive ? 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))' : 'var(--indigo-500-10)',
+          color: isLive ? '#ffffff' : 'var(--indigo-500)',
           border: isLive ? 'none' : '1px solid var(--border-brand)',
           boxShadow: isLive ? 'var(--glow-violet)' : 'none',
         }}

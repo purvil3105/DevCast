@@ -44,6 +44,7 @@ async function main() {
     },
     hsts: config.nodeEnv === 'production',
     crossOriginEmbedderPolicy: false, // allow cross-origin HLS segments
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow frontend to load local upload images
   }));
 
   // ─── Middleware ─────────────────────────────────────────
@@ -58,6 +59,19 @@ async function main() {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Friendly root response so opening localhost:3000 in a browser doesn't show
+  // the confusing Express "Cannot GET /" error page.
+  app.get('/', (_req, res) => {
+    res.json({ service: 'DevCast API', version: '1.0.0', status: 'ok', hint: 'Frontend is at http://localhost:5173' });
+  });
+
+  // ─── Local Uploads Fallback ────────────────────────────
+  app.use('/uploads', express.static('uploads', {
+    setHeaders: (res) => {
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
+  }));
 
   // ─── API Routes ────────────────────────────────────────
   app.use('/api/auth', authRoutes);

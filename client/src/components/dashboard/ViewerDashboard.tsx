@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Radio, CalendarClock, PlayCircle, Code2, Trophy, Target,
-  TrendingUp, CheckCircle2, Gauge, ArrowRight, Sparkles, History,
+  Radio, CalendarClock, Code2, Trophy, Target,
+  TrendingUp, CheckCircle2, Gauge, ArrowRight, Sparkles, History, Terminal,
 } from 'lucide-react';
 import {
   listStreams, getMySubmissions, listAllChallenges, getStoredUser,
@@ -100,8 +100,8 @@ export function ViewerDashboard() {
   const firstName = (user?.displayName || 'there').split(' ')[0];
 
   const quickActions = [
-    { icon: <PlayCircle size={18} />, label: 'Browse live sessions', desc: 'Find something to join', to: '/live' },
-    { icon: <Code2 size={18} />, label: 'Practice challenges', desc: 'Sharpen your skills', to: '/challenges' },
+    { icon: <Radio size={18} />, label: 'Browse live sessions', desc: 'Find something to join', to: '/live' },
+    { icon: <Terminal size={18} />, label: 'Practice challenges', desc: 'Sharpen your skills', to: '/challenges' },
     { icon: <Trophy size={18} />, label: 'Leaderboard', desc: 'See where you rank', to: '/leaderboards' },
   ];
 
@@ -146,7 +146,7 @@ export function ViewerDashboard() {
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-brand)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--gray-800)'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 'var(--r-sm)', background: 'var(--indigo-500-10)', color: 'var(--indigo-400)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 'var(--r-sm)', background: 'var(--indigo-500-10)', color: 'var(--indigo-500)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {a.icon}
             </span>
             <span style={{ minWidth: 0 }}>
@@ -194,7 +194,8 @@ export function ViewerDashboard() {
               action={
                 <button
                   onClick={() => navigate('/challenges')}
-                  style={{ padding: '9px 18px', borderRadius: 'var(--r-xl)', background: 'var(--grad-brand)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--glow-violet)' }}
+                  className="btn-primary"
+                  style={{ fontSize: 13, padding: '9px 18px' }}
                 >
                   Practice challenges
                 </button>
@@ -213,7 +214,7 @@ export function ViewerDashboard() {
           action={<SeeAll label="History" onClick={() => navigate('/leaderboards')} />}
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-          <StatCard label="Challenges attempted" value={summary?.distinctChallenges ?? 0} icon={<Code2 size={16} />} accent="violet" hint={`${summary?.totalAttempts ?? 0} submissions`} />
+          <StatCard label="Challenges attempted" value={summary?.distinctChallenges ?? 0} icon={<Terminal size={16} />} accent="violet" hint={`${summary?.totalAttempts ?? 0} submissions`} />
           <StatCard label="Completed" value={summary?.challengesCompleted ?? 0} icon={<CheckCircle2 size={16} />} accent="green" hint="all tests passing" />
           <StatCard label="Average score" value={`${summary?.avgScore ?? 0}%`} icon={<Gauge size={16} />} accent="cyan" hint={`best ${summary?.bestScore ?? 0}%`} />
           <StatCard label="Pass rate" value={`${summary?.passRate ?? 0}%`} icon={<Target size={16} />} accent="yellow" hint="tests passed" />

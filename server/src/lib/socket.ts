@@ -122,6 +122,33 @@ export function initSocketIO(httpServer: HttpServer): Server {
     });
   });
 
+  // ─── State Reconciliation ────────────────────────────────
+  // Periodically true-up the Redis viewer count with the actual socket count
+  // to heal ghost connections from server crashes.
+  setInterval(async () => {
+    try {
+      const activeStreams = await prisma.stream.findMany({ 
+        where: { status: 'LIVE' }, 
+        select: { id: true } 
+      });
+      for (const stream of activeStreams) {
+        const streamRoom = `stream:${stream.id}`;
+        const sockets = await io.in(streamRoom).fetchSockets();
+        const actualCount = sockets.length;
+        await redis.hset(`session:${stream.id}`, 'viewer_count', actualCount.toString());
+        
+        io.to(streamRoom).emit('viewer_count_update', {
+          type: 'viewer_count_update',
+          streamId: stream.id,
+          payload: { count: actualCount },
+          serverTime: Date.now(),
+        });
+      }
+    } catch (err) {
+      console.error('Reconciliation error:', err);
+    }
+  }, 30000);
+
   return io;
 }
 

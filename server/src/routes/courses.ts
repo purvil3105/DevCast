@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { authenticate, requireRole } from '../middleware/auth';
 
@@ -54,6 +55,12 @@ router.post('/', authenticate, requireRole('INSTRUCTOR'), async (req: Request, r
     res.status(201).json({ course });
   } catch (err) {
     console.error('Create course error:', err);
+    // P2003 = foreign key violation — the JWT userId no longer exists in the DB.
+    // This happens when the DB is re-seeded while the browser still holds an old token.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+      res.status(401).json({ error: 'Session is invalid. Please log out and log in again.' });
+      return;
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });

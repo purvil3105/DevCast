@@ -41,7 +41,7 @@ services:
     build: ./server
     container_name: devcast-api
     restart: unless-stopped
-    command: npm run start:api
+    command: sh -c "npx prisma db push && npm run db:seed && npm run start:api"
     ports:
       - '3000:3000'
     depends_on:

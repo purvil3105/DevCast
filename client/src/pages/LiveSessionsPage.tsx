@@ -119,21 +119,7 @@ export function LiveSessionsPage() {
           {user?.role === 'INSTRUCTOR' && (
             <button
               onClick={() => setShowCreateModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))',
-                color: '#fff',
-                padding: '10px 20px',
-                borderRadius: 'var(--r-xl)',
-                fontSize: 14,
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: 'var(--glow-violet)',
-                whiteSpace: 'nowrap',
-              }}
+              className="btn-create-stream"
             >
               <Plus size={18} />
               Create Stream

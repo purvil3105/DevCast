@@ -1,27 +1,275 @@
-import { ArrowRight, BookOpen, Code2, Eye, Radio, Trophy, Users } from 'lucide-react';
+import { ArrowRight, Code2, Radio, Trophy, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SpotlightCard } from '../components/landing/SpotlightCard';
+import { StatsBar } from '../components/landing/StatsBar';
+import { StreamSimulator } from '../components/landing/StreamSimulator';
 import { BrandMark } from '../components/BrandMark';
-import { CodeEditorMock } from '../components/landing/CodeEditorMock';
-import { TopBuildersCard } from '../components/landing/TopBuildersCard';
-import { useReveal } from '../hooks/useReveal';
+import { useTypewriter } from '../hooks/useTypewriter';
 
-const features = [[Radio, 'Watch the thinking', 'Follow decisions, tradeoffs, and the messy middle of making something work.'], [Code2, 'Practice in the moment', 'Open the editor, test your ideas, and get immediate feedback while context is fresh.'], [Trophy, 'Compete & climb', 'Turn solved challenges into momentum on a leaderboard that rewards consistency.'], [Users, 'Grow together', 'Compare progress, celebrate wins, and learn from builders on the same path.']];
+const featureList = [
+  {
+    icon: Radio,
+    title: 'Watch the thinking',
+    desc: 'Follow architectural decisions, trade-offs, and the real debugging that happens between ideas and working code.',
+  },
+  {
+    icon: Code2,
+    title: 'Practice in the moment',
+    desc: 'Jump right into the in-browser IDE, execute test suites, and receive instant automated test validation.',
+  },
+  {
+    icon: Trophy,
+    title: 'Compete & climb',
+    desc: 'Turn solved challenges into verified XP on a real-time leaderboard that rewards consistency and depth.',
+  },
+  {
+    icon: Users,
+    title: 'Build in public',
+    desc: 'Exchange insights in live discussion, review peer solutions, and accelerate alongside dedicated engineers.',
+  },
+];
+
+const workflowSteps = [
+  {
+    num: '01',
+    title: 'Join a live room',
+    desc: 'Find an ongoing session that targets your questions or architecture challenges.',
+  },
+  {
+    num: '02',
+    title: 'Accept the prompt',
+    desc: 'Open the shared workspace, run test suites, and write solutions in real-time.',
+  },
+  {
+    num: '03',
+    title: 'Climb the rankings',
+    desc: 'Submit clean code, earn XP rewards, and verify your mastery on the leaderboard.',
+  },
+];
 
 export function LandingPage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [revealRoot, setRevealRoot] = useState<Element | null>(null);
-  const scrollToSection = (event: React.MouseEvent<HTMLAnchorElement>, id: string) => { event.preventDefault(); const section = document.getElementById(id); const page = pageRef.current; if (section && page) page.scrollTo({ top: section.offsetTop - 24, behavior: 'smooth' }); window.history.replaceState(null, '', `#${id}`); };
-  useEffect(() => { const page = pageRef.current; if (!page) return; setRevealRoot(page); const onScroll = () => setScrolled(page.scrollTop > 18); page.addEventListener('scroll', onScroll, { passive: true }); return () => page.removeEventListener('scroll', onScroll); }, []);
-  const hero = useReveal<HTMLDivElement>(revealRoot); const feature = useReveal<HTMLElement>(revealRoot, 80); const how = useReveal<HTMLElement>(revealRoot, 120); const proof = useReveal<HTMLElement>(revealRoot, 160);
-  return <div className="landing-page" ref={pageRef}><div className="landing-grid" />
-    <header className={`landing-nav ${scrolled ? 'scrolled' : ''}`}><Link to="/" className="landing-brand"><img src="/icon.png" alt="DevCast" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/devcast-logo.png'; }} /><span>Dev<span>Cast</span></span></Link><nav><a href="#features" onClick={(e) => scrollToSection(e, 'features')}>Features</a><a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')}>How it works</a><a href="#community" onClick={(e) => scrollToSection(e, 'community')}>Community</a></nav><div className="landing-actions"><Link to="/login" className="landing-login">Log in</Link><Link to="/signup" className="button button-small">Get started <ArrowRight size={15} /></Link></div></header>
-    <main><section className="landing-hero"><div className={`hero-copy reveal ${hero.inView ? 'in-view' : ''}`} ref={hero.ref} style={hero.style}><div className="landing-kicker"><span className="signal-dot" /> LIVE DEVELOPER NETWORK</div><h1>Build in public.<br /><em>Learn in motion.</em></h1><p>Watch real developers solve real problems, then open the editor and make the next move yourself.</p><div className="hero-actions"><Link to="/signup" className="button">Start building <ArrowRight size={18} /></Link><Link to="/live" className="text-link">Explore streams <Eye size={16} /></Link></div><div className="hero-proof"><span className="avatar-cluster"><i>m</i><i>s</i><i>l</i></span><span><strong>8,420+</strong> developers online</span><span className="watching"><strong>1,284</strong> watching now</span></div></div><div className="hero-art"><CodeEditorMock /><TopBuildersCard /><div className="challenge-chip"><BookOpen size={14} /> Challenge unlocked <b>+120 xp</b></div></div></section>
-      <div className="language-marquee"><div>{['JavaScript', 'TypeScript', 'Python', 'C++', 'Go', 'Rust', 'Java', 'SQL'].map((language) => <span key={language}>{language}</span>)}</div></div>
-      <section id="features" className="landing-section" ref={feature.ref}><div className={`reveal ${feature.inView ? 'in-view' : ''}`} style={feature.style}><div className="section-label">WHY DEVCAST</div><h2>The room is live. Your progress is real.</h2><p className="section-lede">DevCast brings the energy of a great workshop into your browser: a focused stream, a real challenge, and a community moving with you.</p></div><div className="feature-grid">{features.map(([Icon, title, text], index) => <article className={`feature-panel feature-${index + 1} reveal ${feature.inView ? 'in-view' : ''}`} style={{ '--reveal-delay': `${index * 90}ms` } as React.CSSProperties} key={title as string}><div className="feature-icon"><Icon size={19} /></div><h3>{title as string}</h3><p>{text as string}</p></article>)}</div></section>
-      <section id="how-it-works" className="landing-strip" ref={how.ref}><div className={`section-label reveal ${how.inView ? 'in-view' : ''}`} style={how.style}>HOW IT WORKS</div><div className="steps">{[['01', 'Join a live room', 'Find a session that matches your next question.'], ['02', 'Take the challenge', 'Turn watching into doing with a shared coding prompt.'], ['03', 'Climb the leaderboard', 'Keep your streak and your curiosity moving.']].map(([number, title, text]) => <div className="step" key={number}><span className="step-number">{number}</span><strong>{title}</strong><p>{text}</p></div>)}</div></section>
-      <section id="community" className="community-section" ref={proof.ref}><div className={`section-heading-row reveal ${proof.inView ? 'in-view' : ''}`} style={proof.style}><div><div className="section-label">COMMUNITY SIGNAL</div><h2>Top builders this week.</h2></div><Link to="/leaderboards" className="text-link">See leaderboard <ArrowRight size={15} /></Link></div><div className="stats-band"><span><strong>8,420+</strong> developers online</span><span><strong>24/7</strong> live practice</span><span><strong>18,642</strong> challenges solved</span></div></section>
-      <section className="final-cta"><div><div className="section-label">YOUR NEXT SESSION STARTS HERE</div><h2>Start building in public.</h2><p>Bring a question. Leave with momentum.</p></div><div className="hero-actions"><Link to="/signup" className="button">Get started <ArrowRight size={18} /></Link><Link to="/login" className="text-link">I have an account</Link></div></section></main>
-    <footer className="landing-footer"><Link to="/" className="landing-brand"><BrandMark size={28} /><span>Dev<span>Cast</span></span></Link><span>Live coding. Real learning.</span><div><Link to="/login">Log in</Link><Link to="/signup">Sign up</Link></div></footer></div>;
+
+  // Typewriter cycling phrases in hero
+  const { text: typewriterText } = useTypewriter([
+    'Learn in motion.',
+    'Ship in the open.',
+    'Code with 8,400 developers.',
+  ]);
+
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const section = document.getElementById(id);
+    const page = pageRef.current;
+    if (section && page) {
+      page.scrollTo({ top: section.offsetTop - 24, behavior: 'smooth' });
+    }
+    window.history.replaceState(null, '', `#${id}`);
+  };
+
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const onScroll = () => setScrolled(page.scrollTop > 50);
+    page.addEventListener('scroll', onScroll, { passive: true });
+    return () => page.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <div className="landing-page" ref={pageRef}>
+      {/* Dot Grid Background */}
+      <div className="dot-grid-bg" aria-hidden="true" />
+
+      {/* Sticky Blur Navbar */}
+      <header className={`landing-nav ${scrolled ? 'scrolled' : ''}`}>
+        <Link to="/" className="landing-brand">
+          <BrandMark size={32} />
+          <span>
+            Dev<span>Cast</span>
+          </span>
+        </Link>
+
+        <nav>
+          <a href="#features" onClick={(e) => scrollToSection(e, 'features')}>
+            Features
+          </a>
+          <a href="#how-it-works" onClick={(e) => scrollToSection(e, 'how-it-works')}>
+            How it works
+          </a>
+          <a href="#community" onClick={(e) => scrollToSection(e, 'community')}>
+            Community
+          </a>
+        </nav>
+
+        <div className="landing-actions">
+          <div className="nav-live-indicator">
+            <span className="nav-live-dot" />
+            <span>12 LIVE</span>
+          </div>
+          <Link to="/login" className="landing-login">
+            Log in
+          </Link>
+          <Link to="/signup" className="btn-solid-primary btn-small">
+            Get started <ArrowRight size={14} />
+          </Link>
+        </div>
+      </header>
+
+      <main>
+        {/* Hero Section */}
+        <section className="landing-hero">
+          <div className="hero-copy">
+            <div className="hero-eyebrow">
+              <span className="pulse-dot" /> LIVE DEVELOPER NETWORK
+            </div>
+
+            <h1>Build in public.</h1>
+            <div className="hero-subtitle-typewriter">
+              <span>{typewriterText}</span>
+              <span className="typewriter-cursor">|</span>
+            </div>
+
+            <p>
+              Watch real developers solve real problems, then open the editor and make the next move
+              yourself.
+            </p>
+
+            <div className="hero-actions">
+              <Link to="/signup" className="btn-solid-primary">
+                Start building <ArrowRight size={16} />
+              </Link>
+              <Link to="/live" className="btn-ghost-link">
+                Explore streams →
+              </Link>
+            </div>
+
+            <div className="hero-proof-cluster">
+              <div className="avatar-stack">
+                <span>M</span>
+                <span>S</span>
+                <span>L</span>
+                <span>A</span>
+              </div>
+              <span>
+                <strong>8,420+</strong> developers online
+              </span>
+              <span className="proof-divider" />
+              <span>
+                <strong>1,284</strong> watching now
+              </span>
+            </div>
+          </div>
+
+          <div className="hero-art-container">
+            <StreamSimulator />
+          </div>
+        </section>
+
+        {/* Stats & Infinite Marquee Section */}
+        <div id="community">
+          <StatsBar />
+        </div>
+
+        {/* Features Grid ("Why DevCast") */}
+        <section id="features" className="landing-section">
+          <span className="section-label-mono">WHY DEVCAST</span>
+          <h2>The room is live. Your progress is real.</h2>
+          <p className="section-lede-text">
+            DevCast brings the energy of a focused engineering room into your browser: a real
+            stream, an executable challenge, and a community moving together.
+          </p>
+
+          <div className="features-grid-wrapper">
+            {featureList.map(({ icon: Icon, title, desc }) => (
+              <SpotlightCard key={title}>
+                <div className="feature-icon-container">
+                  <Icon size={24} />
+                </div>
+                <h3>{title}</h3>
+                <p>{desc}</p>
+              </SpotlightCard>
+            ))}
+          </div>
+        </section>
+
+        {/* Workflow Strip ("How it works") */}
+        <section id="how-it-works" className="workflow-section">
+          <div className="workflow-container">
+            <span className="section-label-mono">WORKFLOW</span>
+            <h2>Three steps from observer to builder.</h2>
+
+            <div className="workflow-steps">
+              {workflowSteps.map(({ num, title, desc }) => (
+                <div className="workflow-step-card" key={num}>
+                  <span className="step-num-tag">{num}</span>
+                  <strong>{title}</strong>
+                  <p>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section (Full-bleed + Beam sweep) */}
+        <section className="final-cta-section">
+          <div className="cta-beam-sweep" aria-hidden="true" />
+          <div className="final-cta-container">
+            <span className="section-label-mono">YOUR NEXT SESSION STARTS HERE</span>
+            <h2>Start building in public.</h2>
+            <p>
+              Bring a question. Leave with momentum. Join developers building, learning, and
+              shipping in real time.
+            </p>
+
+            <div className="cta-social-proof">
+              <div className="avatar-stack">
+                <span>M</span>
+                <span>S</span>
+                <span>L</span>
+                <span>A</span>
+              </div>
+              <span>Join 8,420+ developers building live</span>
+            </div>
+
+            <div className="final-cta-actions">
+              <Link to="/signup" className="btn-solid-primary">
+                Get started <ArrowRight size={16} />
+              </Link>
+              <Link to="/login" className="btn-ghost-link">
+                I already have an account
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Clean Footer */}
+      <footer className="landing-footer">
+        <Link to="/" className="landing-brand">
+          <img
+            src="/icon.png"
+            alt="DevCast"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = '/devcast-logo.png';
+            }}
+          />
+          <span>
+            Dev<span>Cast</span>
+          </span>
+        </Link>
+
+        <span>Live coding · Real learning · Verifiable progress</span>
+
+        <div className="landing-footer-links">
+          <Link to="/live">Browse streams</Link>
+          <Link to="/challenges">Challenges</Link>
+          <Link to="/login">Log in</Link>
+          <Link to="/signup">Sign up</Link>
+        </div>
+      </footer>
+    </div>
+  );
 }

@@ -100,7 +100,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="e.g. Reverse a String"
-              style={{ width: '100%', background: 'var(--gray-950)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'white', fontSize: 14 }}
+              style={{ width: '100%', background: 'var(--gray-900)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'var(--text-main)', fontSize: 14 }}
             />
           </div>
 
@@ -111,7 +111,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
               onChange={e => setDescription(e.target.value)}
               placeholder="Explain the problem here..."
               rows={3}
-              style={{ width: '100%', background: 'var(--gray-950)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'white', fontSize: 14, resize: 'vertical' }}
+              style={{ width: '100%', background: 'var(--gray-900)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'var(--text-main)', fontSize: 14, resize: 'vertical' }}
             />
           </div>
 
@@ -126,7 +126,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                   if (e.target.value === 'python') setStarterCode('def my_solution(*args):\n    # Your code here\n    pass');
                   if (e.target.value === 'cpp') setStarterCode('#include <iostream>\n#include <string>\n\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    // Your code here\n    // Parse argv[1] and print the result\n    return 0;\n}');
                 }}
-                style={{ width: '100%', background: 'var(--gray-950)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'white', fontSize: 14 }}
+                style={{ width: '100%', background: 'var(--gray-900)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'var(--text-main)', fontSize: 14 }}
               >
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
@@ -141,7 +141,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                 onChange={e => setDurationSeconds(Number(e.target.value))}
                 min={30}
                 max={3600}
-                style={{ width: '100%', background: 'var(--gray-950)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'white', fontSize: 14 }}
+                style={{ width: '100%', background: 'var(--gray-900)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'var(--text-main)', fontSize: 14 }}
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
               value={starterCode}
               onChange={e => setStarterCode(e.target.value)}
               rows={4}
-              style={{ width: '100%', background: 'var(--gray-950)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'white', fontSize: 14, fontFamily: 'var(--font-mono)', resize: 'vertical' }}
+              style={{ width: '100%', background: 'var(--gray-900)', border: '1px solid var(--gray-800)', padding: '10px 12px', borderRadius: 8, color: 'var(--text-main)', fontSize: 14, fontFamily: 'var(--font-mono)', resize: 'vertical' }}
             />
           </div>
 
@@ -167,7 +167,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ padding: '8px 16px', background: 'var(--indigo-600)', border: 'none', color: 'white', borderRadius: 8, fontSize: 14, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
+              style={{ padding: '8px 18px', background: 'linear-gradient(135deg, var(--indigo-500), var(--indigo-600))', border: 'none', color: '#fff', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.7 : 1, boxShadow: 'var(--glow-violet)' }}
             >
               {isSubmitting ? 'Creating...' : 'Create Challenge'}
             </button>

@@ -35,6 +35,8 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
   const [qualities, setQualities] = useState<QualityLevel[]>([]);
   const [currentQuality, setCurrentQuality] = useState(-1); // -1 = Auto
   const hideControlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [videoState, setVideoState] = useState<'loading' | 'buffering' | 'playing' | 'autoplay-blocked' | 'error'>('loading');
+  const [videoError, setVideoError] = useState<string | null>(null);
 
   // ─── HLS Setup ──────────────────────────────────────────
   useEffect(() => {
@@ -63,10 +65,20 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
         // Sort by height descending (1080p first)
         levels.sort((a, b) => b.height - a.height);
         setQualities(levels);
+        setVideoState('buffering');
 
-        video.play().catch(() => {
-          // Autoplay blocked
+        video.play().then(() => {
+          setVideoState('playing');
+        }).catch((err) => {
+          console.warn('Autoplay blocked:', err.message);
+          setVideoState('autoplay-blocked');
         });
+      });
+
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        if (videoState === 'buffering' || videoState === 'loading') {
+          setVideoState('playing');
+        }
       });
 
       hls.on(Hls.Events.LEVEL_SWITCHED, () => {
@@ -80,8 +92,8 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              // Stream might not have started yet or we got a 404. Let it retry.
               console.log('HLS Network Error, attempting to recover...', data);
+              setVideoState('buffering');
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -90,6 +102,8 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
               break;
             default:
               console.error('HLS Fatal Error, destroying player', data);
+              setVideoState('error');
+              setVideoError(`${data.type}: ${data.details}`);
               hls.destroy();
               break;
           }
@@ -149,7 +163,9 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play().catch(() => {});
+      video.play().then(() => {
+        setVideoState('playing');
+      }).catch(() => {});
     } else {
       video.pause();
     }
@@ -315,6 +331,75 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate }: VideoPlaye
       }}>
         <span className="live-badge"><span className="dot" />LIVE</span>
       </div>
+
+      {/* Video state overlays */}
+      {(videoState === 'loading' || videoState === 'buffering') && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 4,
+          gap: 12,
+        }}>
+          <div style={{
+            width: 40, height: 40, border: '3px solid rgba(255,255,255,0.2)',
+            borderTopColor: 'var(--indigo-400)', borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }} />
+          <span style={{ color: 'var(--gray-300)', fontSize: 14 }}>
+            {videoState === 'loading' ? 'Connecting to stream...' : 'Buffering...'}
+          </span>
+        </div>
+      )}
+
+      {videoState === 'autoplay-blocked' && (
+        <div
+          onClick={togglePlay}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 4,
+            cursor: 'pointer',
+            gap: 12,
+          }}
+        >
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'var(--indigo-500)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 30px rgba(99,102,241,0.4)',
+          }}>
+            <Play size={28} style={{ color: '#fff', marginLeft: 3 }} />
+          </div>
+          <span style={{ color: 'var(--gray-200)', fontSize: 15, fontWeight: 500 }}>Click to play</span>
+        </div>
+      )}
+
+      {videoState === 'error' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.7)',
+          zIndex: 4,
+          gap: 8,
+        }}>
+          <span style={{ color: 'var(--red-400)', fontSize: 15, fontWeight: 600 }}>Stream Error</span>
+          <span style={{ color: 'var(--gray-400)', fontSize: 13 }}>{videoError}</span>
+        </div>
+      )}
 
       {/* Bottom Controls Overlay */}
       <div style={{

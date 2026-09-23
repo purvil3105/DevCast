@@ -53,7 +53,11 @@ export function runCode(
     for (const tc of testCases) {
       try {
         let dockerArgs: string[] = [];
-        const base = ['run', '--rm', '--network', 'none', '--memory', '256m', '--cpus', '1'];
+        const base = [
+          'run', '--rm', '--network', 'none', 
+          '--memory', '256m', '--cpus', '1',
+          '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges'
+        ];
 
         if (language === 'javascript') {
           const codeFile = path.join(tmpDir, 'solution.js');
