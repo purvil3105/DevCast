@@ -16,6 +16,8 @@ RUN npm run build
 # Production image
 FROM node:20-alpine AS runner
 
+RUN apk add --no-cache curl
+
 WORKDIR /app
 
 # Copy built files and dependencies

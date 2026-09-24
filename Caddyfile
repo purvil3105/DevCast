@@ -1,7 +1,10 @@
 # Caddyfile for DevCast Self-Hosted Production
-# DOMAIN environment variable is automatically substituted from .env.prod
-{$DOMAIN} {
-    # ── API REST Endpoints ──────────────────────────────
+# DOMAIN environment variable is substituted from .env.prod
+# Fallback to localhost so Caddy never crashes on an empty domain
+
+{$DOMAIN:localhost} {
+
+    # ── REST API ─────────────────────────────────────────────
     handle /api/* {
         reverse_proxy api:3000 {
             health_uri /api/health
@@ -9,7 +12,7 @@
         }
     }
 
-    # ── Socket.IO WebSocket ─────────────────────────────
+    # ── Socket.IO WebSocket ──────────────────────────────────
     handle /socket.io/* {
         reverse_proxy ws:3001 {
             header_up Host {upstream_hostport}
@@ -17,7 +20,7 @@
         }
     }
 
-    # ── Live HLS Streaming ──────────────────────────────
+    # ── Live HLS Streaming ───────────────────────────────────
     handle /hls/* {
         root * /var/hls/live
         uri strip_prefix /hls
@@ -26,7 +29,7 @@
         header Cache-Control "no-cache, no-store, must-revalidate"
     }
 
-    # ── Recorded VOD Playback ───────────────────────────
+    # ── Recorded VOD Playback ────────────────────────────────
     handle /vod/* {
         root * /var/hls/vod
         uri strip_prefix /vod
@@ -35,12 +38,12 @@
         header Cache-Control "public, max-age=86400"
     }
 
-    # ── React SPA Client (Static HTML/JS/CSS) ───────────
+    # ── React SPA (catch-all) ────────────────────────────────
     handle {
         reverse_proxy client:80
     }
 
-    # ── Logging with File Rotation ───────────────────────
+    # ── Access Log ───────────────────────────────────────────
     log {
         output file /var/log/caddy/access.log {
             roll_size 20MB

@@ -44,6 +44,12 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: 
     const video = videoRef.current;
     if (!video || !hlsUrl) return;
 
+    // Automatically resolve localhost:8080 URLs to the current domain when deployed
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const effectiveUrl = (!isLocal && hlsUrl.includes('localhost:8080/hls/'))
+      ? hlsUrl.replace(/http:\/\/localhost:8080\/hls\//, `${window.location.origin}/hls/`)
+      : hlsUrl;
+
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
@@ -51,7 +57,7 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: 
         backBufferLength: 30,
       });
 
-      hls.loadSource(hlsUrl);
+      hls.loadSource(effectiveUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
@@ -119,7 +125,7 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: 
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari)
-      video.src = hlsUrl;
+      video.src = effectiveUrl;
       video.addEventListener('loadedmetadata', () => {
         video.play().catch(() => {});
       });

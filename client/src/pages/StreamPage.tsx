@@ -153,7 +153,8 @@ export function StreamPage() {
           payload: { status: 'ended', hlsUrl: stream.vodUrl, viewerCount: 0 }
         });
       } else if (stream?.streamKey && !hlsUrlInput) {
-        setHlsUrlInput(`http://localhost:8080/hls/${stream.streamKey}.m3u8`);
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        setHlsUrlInput(isLocal ? `http://localhost:8080/hls/${stream.streamKey}.m3u8` : `${window.location.origin}/hls/${stream.streamKey}.m3u8`);
       }
     }).catch(console.error);
   }, [streamId, dispatch]);
@@ -490,7 +491,7 @@ export function StreamPage() {
                           <span style={{ color: 'var(--gray-400)', fontWeight: 500, fontSize: 11 }}>RTMP Server URL:</span>
                           <button
                             type="button"
-                            onClick={() => handleCopy('rtmp://localhost:1935/live', 'rtmp')}
+                            onClick={() => handleCopy(`rtmp://${window.location.hostname}/live`, 'rtmp')}
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -519,7 +520,7 @@ export function StreamPage() {
                           border: '1px solid var(--gray-800)',
                           userSelect: 'all',
                         }}>
-                          rtmp://localhost:1935/live
+                          {`rtmp://${window.location.hostname}/live`}
                         </div>
                       </div>
 
