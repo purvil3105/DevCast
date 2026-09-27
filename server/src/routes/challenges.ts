@@ -18,16 +18,22 @@ router.post(
   requireRole('INSTRUCTOR'),
   async (req: Request, res: Response) => {
     try {
-      const { title, description, language } = req.body;
+      const { title, description, language, sampleInput, sampleOutput, sampleTestCase } = req.body;
       if (!title || !language) {
         res.status(400).json({ error: 'title and language are required' });
         return;
       }
 
+      const sample = sampleTestCase || (sampleInput || sampleOutput ? {
+        input: typeof sampleInput === 'string' ? sampleInput : '',
+        output: typeof sampleOutput === 'string' ? sampleOutput : '',
+      } : undefined);
+
       const generated = await generateChallengeTestCases(
         String(title).trim(),
         String(description || '').trim(),
-        String(language).trim().toLowerCase()
+        String(language).trim().toLowerCase(),
+        sample
       );
 
       res.json(generated);

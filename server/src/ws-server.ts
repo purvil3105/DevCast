@@ -22,12 +22,9 @@ async function main() {
 
   httpServer.listen(wsPort, () => {
     console.log(`
-╔══════════════════════════════════════════════╗
-║           🔌 DevCast WS Server               ║
-╠══════════════════════════════════════════════╣
-║  WebSocket: ws://localhost:${wsPort}              ║
-║  Env:       ${config.nodeEnv.padEnd(31)}║
-╚══════════════════════════════════════════════╝
+      DevCast WS Server          
+      WebSocket: ws://localhost:${wsPort}             
+      Env:       ${config.nodeEnv}
     `);
   });
 

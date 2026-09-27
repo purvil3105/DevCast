@@ -20,6 +20,7 @@
     "docker:down": "docker compose down"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "typescript": "^7.0.2"
   }
 }

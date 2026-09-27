@@ -29,3 +29,6 @@ client/.vite/
 .vscode/
 *.swp
 *.swo
+
+# Temporary scratch scripts
+scratch/

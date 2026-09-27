@@ -48,61 +48,155 @@ export function runCode(
 
   // Create temp directory for this execution
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'devcast-sandbox-'));
+  const mountDir = tmpDir.replace(/\\/g, '/');
+
+  const baseDockerArgs = [
+    'run', '--rm', '--network', 'none',
+    '--memory', '256m', '--cpus', '1',
+    '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges'
+  ];
 
   try {
+    // ── Phase 1: Pre-compilation / Preparation (ONCE per submission) ──
+    if (language === 'cpp') {
+      const codeFile = path.join(tmpDir, 'solution.cpp');
+      fs.writeFileSync(codeFile, code);
+
+      try {
+        // Compile once with a generous 15s timeout for Docker container startup
+        execFileSync('docker', [
+          'run', '--rm', '--network', 'none',
+          '--memory', '512m', '--cpus', '1',
+          '-v', `${mountDir}:/app:rw`,
+          'gcc:13',
+          'g++', '-O2', '/app/solution.cpp', '-o', '/app/solution'
+        ], {
+          timeout: 15000,
+          maxBuffer: 1024 * 100,
+          stdio: ['pipe', 'pipe', 'pipe']
+        });
+      } catch (compileErr: any) {
+        const compileMsg = compileErr.stderr?.toString()?.trim() || compileErr.message?.substring(0, 300) || 'Compilation failed';
+        stderr = compileMsg;
+
+        return {
+          results: testCases.map(tc => ({
+            passed: false,
+            expected: parseExpected(tc.expected_output),
+            error: `Compilation Error:\n${compileMsg.substring(0, 500)}`,
+            description: tc.description,
+          })),
+          stdout: '',
+          stderr: compileMsg,
+          executionTimeMs: Date.now() - startTime,
+        };
+      }
+    } else if (language === 'python') {
+      const codeFile = path.join(tmpDir, 'solution.py');
+      fs.writeFileSync(codeFile, code);
+    } else if (language === 'javascript') {
+      const codeFile = path.join(tmpDir, 'solution.js');
+      fs.writeFileSync(codeFile, code);
+    }
+
+    // ── Phase 2: Execute Test Cases ──
     for (const tc of testCases) {
       try {
-        let dockerArgs: string[] = [];
-        const base = [
-          'run', '--rm', '--network', 'none', 
-          '--memory', '256m', '--cpus', '1',
-          '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges'
-        ];
+        let output = '';
 
-        if (language === 'javascript') {
-          const codeFile = path.join(tmpDir, 'solution.js');
-          fs.writeFileSync(codeFile, code);
-          const runnerCode = buildJSRunner(tc);
-          const runnerFile = path.join(tmpDir, 'runner.js');
-          fs.writeFileSync(runnerFile, runnerCode);
-
-          const mountDir = tmpDir.replace(/\\/g, '/');
-          dockerArgs = [...base, '-v', `${mountDir}:/app:ro`, 'node:20-alpine', 'node', '/app/runner.js'];
-        } else if (language === 'python') {
-          const codeFile = path.join(tmpDir, 'solution.py');
-          fs.writeFileSync(codeFile, code);
-          const runnerCode = buildPythonRunner(tc);
-          const runnerFile = path.join(tmpDir, 'runner.py');
-          fs.writeFileSync(runnerFile, runnerCode);
-
-          const mountDir = tmpDir.replace(/\\/g, '/');
-          dockerArgs = [...base, '-v', `${mountDir}:/app:ro`, 'python:3.11-alpine', 'python', '/app/runner.py'];
-        } else if (language === 'cpp') {
-          const codeFile = path.join(tmpDir, 'solution.cpp');
-          fs.writeFileSync(codeFile, code);
-
-          const mountDir = tmpDir.replace(/\\/g, '/');
-          // Pass input through a container env var — as a single argv element it never
-          // touches a host shell, and "$INPUT" is safely quoted inside the container.
-          dockerArgs = [
-            ...base,
+        if (language === 'cpp') {
+          // Pre-compiled binary is executed with input fed to stdin AND passed as argv[1]
+          const runArgs = [
+            'run', '-i', '--rm', '--network', 'none',
+            '--memory', '128m', '--cpus', '1',
             '-e', `INPUT=${tc.input}`,
-            '-v', `${mountDir}:/app:rw`,
+            '-v', `${mountDir}:/app:ro`,
             'gcc:13',
-            'bash', '-c',
-            'g++ -O2 /app/solution.cpp -o /app/solution && /app/solution "$INPUT"',
+            '/app/solution', tc.input
           ];
-        } else {
-          throw new Error(`Language "${language}" is not supported.`);
+
+          const stdinInput = tc.input.endsWith('\n') ? tc.input : `${tc.input}\n`;
+          output = execFileSync('docker', runArgs, {
+            input: stdinInput,
+            timeout: Math.min(Math.max(timeLimitMs, 4000), 10000),
+            maxBuffer: 1024 * 50,
+            stdio: ['pipe', 'pipe', 'pipe'],
+          }).toString().trim();
+        } else if (language === 'python') {
+          const isCPStyle = code.includes('input(') || code.includes('sys.stdin');
+
+          if (isCPStyle) {
+            const runArgs = [
+              'run', '-i', '--rm', '--network', 'none',
+              '--memory', '128m', '--cpus', '1',
+              '-v', `${mountDir}:/app:ro`,
+              'python:3.11-alpine',
+              'python', '/app/solution.py'
+            ];
+            const stdinInput = tc.input.endsWith('\n') ? tc.input : `${tc.input}\n`;
+            output = execFileSync('docker', runArgs, {
+              input: stdinInput,
+              timeout: Math.min(Math.max(timeLimitMs, 4000), 10000),
+              maxBuffer: 1024 * 50,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            }).toString().trim();
+          } else {
+            const runnerCode = buildPythonRunner(tc);
+            const runnerFile = path.join(tmpDir, 'runner.py');
+            fs.writeFileSync(runnerFile, runnerCode);
+
+            const dockerArgs = [
+              ...baseDockerArgs,
+              '-v', `${mountDir}:/app:ro`,
+              'python:3.11-alpine',
+              'python', '/app/runner.py'
+            ];
+
+            output = execFileSync('docker', dockerArgs, {
+              timeout: Math.min(Math.max(timeLimitMs, 4000), 10000),
+              maxBuffer: 1024 * 50,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            }).toString().trim();
+          }
+        } else if (language === 'javascript') {
+          const isCPStyle = code.includes('readline') || code.includes('readFileSync(0)');
+
+          if (isCPStyle) {
+            const runArgs = [
+              'run', '-i', '--rm', '--network', 'none',
+              '--memory', '128m', '--cpus', '1',
+              '-v', `${mountDir}:/app:ro`,
+              'node:20-alpine',
+              'node', '/app/solution.js'
+            ];
+            const stdinInput = tc.input.endsWith('\n') ? tc.input : `${tc.input}\n`;
+            output = execFileSync('docker', runArgs, {
+              input: stdinInput,
+              timeout: Math.min(Math.max(timeLimitMs, 4000), 10000),
+              maxBuffer: 1024 * 50,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            }).toString().trim();
+          } else {
+            const runnerCode = buildJSRunner(tc);
+            const runnerFile = path.join(tmpDir, 'runner.js');
+            fs.writeFileSync(runnerFile, runnerCode);
+
+            const dockerArgs = [
+              ...baseDockerArgs,
+              '-v', `${mountDir}:/app:ro`,
+              'node:20-alpine',
+              'node', '/app/runner.js'
+            ];
+
+            output = execFileSync('docker', dockerArgs, {
+              timeout: Math.min(Math.max(timeLimitMs, 4000), 10000),
+              maxBuffer: 1024 * 50,
+              stdio: ['pipe', 'pipe', 'pipe'],
+            }).toString().trim();
+          }
         }
 
-        const output = execFileSync('docker', dockerArgs, {
-          timeout: Math.min(timeLimitMs, 15000), // Slightly longer timeout to account for docker startup overhead
-          maxBuffer: 1024 * 50, // 50KB
-          stdio: ['pipe', 'pipe', 'pipe'],
-        }).toString().trim();
-
-        // Parse the structured output
+        // Parse structured output or raw stdout
         let parsed: any;
         try {
           const maybeParsed = JSON.parse(output);
@@ -112,7 +206,7 @@ export function runCode(
             parsed = { result: maybeParsed, stdout: '' };
           }
         } catch {
-          parsed = { result: output, stdout: '' };
+          parsed = { result: output, stdout: output };
         }
 
         const expectedParsed = parseExpected(tc.expected_output);
@@ -125,22 +219,25 @@ export function runCode(
             description: tc.description,
           });
         } else {
-          // Compare as string to handle types loosely
-          const actualStr = JSON.stringify(parsed.result);
-          const expectedStr = JSON.stringify(expectedParsed);
+          // Compare loosely handling whitespace, JSON formatting, or raw strings
+          const actualStr = typeof parsed.result === 'object' ? JSON.stringify(parsed.result) : String(parsed.result ?? '').trim();
+          const expectedStr = typeof expectedParsed === 'object' ? JSON.stringify(expectedParsed) : String(expectedParsed ?? '').trim();
+          const looseMatch = actualStr.replace(/\s+/g, '') === expectedStr.replace(/\s+/g, '');
+
+          const isPassed = actualStr === expectedStr || looseMatch || (String(parsed.result).trim() === String(tc.expected_output).trim());
 
           results.push({
-            passed: actualStr === expectedStr || String(parsed.result).trim() === String(expectedParsed).trim(),
+            passed: isPassed,
             actual: parsed.result,
             expected: expectedParsed,
             description: tc.description,
           });
         }
 
-        if (parsed.stdout) stdout += parsed.stdout + '\n';
+        if (parsed.stdout) stdout += `${parsed.stdout}\n`;
       } catch (err: any) {
-        const errorMsg = err.stderr?.toString()?.substring(0, 200) || err.message?.substring(0, 200) || 'Unknown error';
-        stderr += errorMsg + '\n';
+        const errorMsg = err.stderr?.toString()?.substring(0, 300) || err.message?.substring(0, 300) || 'Unknown error';
+        stderr += `${errorMsg}\n`;
 
         results.push({
           passed: false,
@@ -151,7 +248,7 @@ export function runCode(
       }
     }
   } finally {
-    // Clean up temp files
+    // Clean up temp directory
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch {

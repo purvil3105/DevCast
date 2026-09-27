@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Code2, Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { X, Code2, Plus, Trash2, Sparkles, Loader2, Layers, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { createChallenge, generateTestCases } from '../lib/api';
 
 interface CreateChallengeModalProps {
@@ -17,30 +17,341 @@ interface TestCaseItem {
 
 const DEFAULT_TEMPLATES: Record<string, { starterCode: string; testCases: TestCaseItem[] }> = {
   javascript: {
-    starterCode: `module.exports = function reverseString(str) {\n  // Your code here\n  return str.split('').reverse().join('');\n};`,
+    starterCode: `const fs = require('fs');
+
+function solve() {
+  const input = fs.readFileSync(0, 'utf-8').trim();
+  if (!input) return;
+
+  // TODO: Implement your solution here
+  console.log(input);
+}
+
+solve();`,
     testCases: [
-      { id: 'tc-1', input: '"hello"', expectedOutput: '"olleh"', description: 'Single word' },
-      { id: 'tc-2', input: '"DevCast"', expectedOutput: '"tsaCveD"', description: 'Mixed casing' },
-      { id: 'tc-3', input: '"12345"', expectedOutput: '"54321"', description: 'Numeric string' },
+      { id: 'tc-1', input: '', expectedOutput: '', description: 'Test case 1' },
     ],
   },
   python: {
-    starterCode: `def reverse_string(s):\n    # Your code here\n    return s[::-1]`,
+    starterCode: `import sys
+
+def solve():
+    s = sys.stdin.read().strip()
+    if not s:
+        return
+
+    # TODO: Implement your solution here
+    print(s)
+
+if __name__ == '__main__':
+    solve()`,
     testCases: [
-      { id: 'tc-1', input: '"hello"', expectedOutput: '"olleh"', description: 'Single word' },
-      { id: 'tc-2', input: '"DevCast"', expectedOutput: '"tsaCveD"', description: 'Mixed casing' },
-      { id: 'tc-3', input: '"12345"', expectedOutput: '"54321"', description: 'Numeric string' },
+      { id: 'tc-1', input: '', expectedOutput: '', description: 'Test case 1' },
     ],
   },
   cpp: {
-    starterCode: `#include <iostream>\n#include <string>\n#include <algorithm>\n\nusing namespace std;\n\nint main(int argc, char* argv[]) {\n    if (argc < 2) return 0;\n    string s = argv[1];\n    // Your code here\n    reverse(s.begin(), s.end());\n    cout << s;\n    return 0;\n}`,
+    starterCode: `#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// TODO: Implement your algorithm here
+void solve() {
+    // Read from standard input (cin) and print to standard output (cout)
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    solve();
+    return 0;
+}`,
     testCases: [
-      { id: 'tc-1', input: 'hello', expectedOutput: 'olleh', description: 'Single word' },
-      { id: 'tc-2', input: 'DevCast', expectedOutput: 'tsaCveD', description: 'Mixed casing' },
-      { id: 'tc-3', input: '12345', expectedOutput: '54321', description: 'Numeric string' },
+      { id: 'tc-1', input: '', expectedOutput: '', description: 'Test case 1' },
     ],
   },
 };
+
+const TOPIC_PRESETS = [
+  {
+    id: 'two-sum',
+    label: 'Two Sum',
+    title: 'Two Sum',
+    description: 'Given an array of integers nums and an integer target, return 0-based indices of the two numbers such that they add up to target. Output the indices separated by a space.',
+    cases: [
+      { input: '4 9\n2 7 11 15', expectedOutput: '0 1', description: 'Standard case: target sum found in first two elements' },
+      { input: '3 6\n3 2 4', expectedOutput: '1 2', description: 'Target sum elements in middle and end' },
+      { input: '2 6\n3 3', expectedOutput: '0 1', description: 'Duplicate numbers adding to target' },
+      { input: '4 0\n-3 4 3 90', expectedOutput: '0 2', description: 'Negative and positive numbers summing to zero' },
+    ],
+    starterCodes: {
+      javascript: `const fs = require('fs');
+
+// Return 0-based indices [i, j] of the two numbers that add up to target
+function twoSum(nums, target) {
+  // TODO: Implement your algorithm here
+  return [];
+}
+
+function main() {
+  const tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+  if (tokens.length < 2) return;
+  const n = parseInt(tokens[0], 10);
+  const target = parseInt(tokens[1], 10);
+  const nums = tokens.slice(2, 2 + n).map(Number);
+
+  const res = twoSum(nums, target);
+  if (res.length >= 2) {
+    console.log(\`\${res[0]} \${res[1]}\`);
+  }
+}
+
+main();`,
+      python: `import sys
+
+def two_sum(nums, target):
+    # TODO: Implement your algorithm here
+    # Return a list of two indices [i, j]
+    return []
+
+def main():
+    tokens = sys.stdin.read().split()
+    if not tokens:
+        return
+    n = int(tokens[0])
+    target = int(tokens[1])
+    nums = [int(x) for x in tokens[2:2 + n]]
+
+    ans = two_sum(nums, target)
+    if len(ans) >= 2:
+        print(f"{ans[0]} {ans[1]}")
+
+if __name__ == '__main__':
+    main()`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+// Returns 0-based indices of two numbers that sum to target
+vector<int> twoSum(const vector<int>& nums, int target) {
+    // TODO: Implement your algorithm here
+    return {};
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n, target;
+    if (!(cin >> n >> target)) return 0;
+
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    vector<int> result = twoSum(nums, target);
+    if (result.size() >= 2) {
+        cout << result[0] << " " << result[1] << "\\n";
+    }
+    return 0;
+}`,
+    },
+  },
+  {
+    id: 'max-subarray',
+    label: 'Max Subarray',
+    title: 'Maximum Subarray (Kadane)',
+    description: 'Given an integer array nums, find the contiguous subarray (containing at least one number) which has the largest sum and print its sum.',
+    cases: [
+      { input: '9\n-2 1 -3 4 -1 2 1 -5 4', expectedOutput: '6', description: 'Standard Kadane test case' },
+      { input: '1\n1', expectedOutput: '1', description: 'Single element array' },
+      { input: '5\n5 4 -1 7 8', expectedOutput: '23', description: 'All positive with one negative' },
+      { input: '4\n-4 -3 -2 -1', expectedOutput: '-1', description: 'All negative numbers' },
+    ],
+    starterCodes: {
+      javascript: `const fs = require('fs');
+
+function maxSubArray(nums) {
+  // TODO: Implement your algorithm here
+  return 0;
+}
+
+function main() {
+  const tokens = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+  if (tokens.length === 0 || tokens[0] === '') return;
+  const n = parseInt(tokens[0], 10);
+  const nums = tokens.slice(1, 1 + n).map(Number);
+  console.log(maxSubArray(nums));
+}
+
+main();`,
+      python: `import sys
+
+def max_subarray(nums):
+    # TODO: Implement your algorithm here
+    return 0
+
+def main():
+    tokens = sys.stdin.read().split()
+    if not tokens:
+        return
+    n = int(tokens[0])
+    nums = [int(x) for x in tokens[1:1 + n]]
+    print(max_subarray(nums))
+
+if __name__ == '__main__':
+    main()`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+long long maxSubArray(const vector<int>& nums) {
+    // TODO: Implement your algorithm here
+    return 0;
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int n;
+    if (!(cin >> n)) return 0;
+    vector<int> nums(n);
+    for (int i = 0; i < n; i++) cin >> nums[i];
+
+    cout << maxSubArray(nums) << "\\n";
+    return 0;
+}`,
+    },
+  },
+  {
+    id: 'palindrome',
+    label: 'Palindrome Check',
+    title: 'Palindrome String Check',
+    description: 'Determine if a given string is a palindrome. Print "true" if it reads the same backwards, and "false" otherwise.',
+    cases: [
+      { input: 'racecar', expectedOutput: 'true', description: 'Odd-length palindrome' },
+      { input: 'noon', expectedOutput: 'true', description: 'Even-length palindrome' },
+      { input: 'devcast', expectedOutput: 'false', description: 'Non-palindrome word' },
+      { input: 'a', expectedOutput: 'true', description: 'Single character boundary case' },
+    ],
+    starterCodes: {
+      javascript: `const fs = require('fs');
+
+function isPalindrome(s) {
+  // TODO: Return true if s is a palindrome, false otherwise
+  return false;
+}
+
+function main() {
+  const input = fs.readFileSync(0, 'utf-8').trim();
+  if (!input) return;
+  console.log(isPalindrome(input) ? 'true' : 'false');
+}
+
+main();`,
+      python: `import sys
+
+def is_palindrome(s: str) -> bool:
+    # TODO: Return True if s is a palindrome, False otherwise
+    return False
+
+def main():
+    s = sys.stdin.read().strip()
+    if s:
+        print("true" if is_palindrome(s) else "false")
+
+if __name__ == '__main__':
+    main()`,
+      cpp: `#include <iostream>
+#include <string>
+
+using namespace std;
+
+bool isPalindrome(const string& s) {
+    // TODO: Return true if s is a palindrome, false otherwise
+    return false;
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    string s;
+    if (cin >> s) {
+        cout << (isPalindrome(s) ? "true" : "false") << "\\n";
+    }
+    return 0;
+}`,
+    },
+  },
+  {
+    id: 'reverse-string',
+    label: 'Reverse String',
+    title: 'Reverse a String',
+    description: 'Write a program that takes a string input from standard input and prints the string reversed.',
+    cases: [
+      { input: 'hello', expectedOutput: 'olleh', description: 'Single word' },
+      { input: 'DevCast', expectedOutput: 'tsaCveD', description: 'Mixed casing' },
+      { input: '12345', expectedOutput: '54321', description: 'Numeric string' },
+      { input: 'a', expectedOutput: 'a', description: 'Single character' },
+    ],
+    starterCodes: {
+      javascript: `const fs = require('fs');
+
+function reverseString(s) {
+  // TODO: Reverse the string and return it
+  return '';
+}
+
+function main() {
+  const s = fs.readFileSync(0, 'utf-8').trim();
+  if (!s) return;
+  console.log(reverseString(s));
+}
+
+main();`,
+      python: `import sys
+
+def reverse_string(s: str) -> str:
+    # TODO: Reverse the string and return it
+    return ''
+
+def main():
+    s = sys.stdin.read().strip()
+    if s:
+        print(reverse_string(s))
+
+if __name__ == '__main__':
+    main()`,
+      cpp: `#include <iostream>
+#include <string>
+
+using namespace std;
+
+string reverseString(string s) {
+    // TODO: Reverse the string and return it
+    return "";
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    string s;
+    if (cin >> s) {
+        cout << reverseString(s) << "\\n";
+    }
+    return 0;
+}`,
+    },
+  },
+];
 
 export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateChallengeModalProps) {
   const [title, setTitle] = useState('');
@@ -53,12 +364,39 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [error, setError] = useState('');
 
+  // Optional guidance sample for AI
+  const [showSampleGuidance, setShowSampleGuidance] = useState(false);
+  const [guideSampleInput, setGuideSampleInput] = useState('');
+  const [guideSampleOutput, setGuideSampleOutput] = useState('');
+
   const handleLanguageChange = (newLanguage: 'javascript' | 'python' | 'cpp') => {
     setLanguage(newLanguage);
+
+    const matchedPreset = TOPIC_PRESETS.find(p => p.title.toLowerCase() === title.trim().toLowerCase());
+    if (matchedPreset && matchedPreset.starterCodes[newLanguage]) {
+      setStarterCode(matchedPreset.starterCodes[newLanguage]);
+      return;
+    }
+
     const template = DEFAULT_TEMPLATES[newLanguage];
     if (template) {
       setStarterCode(template.starterCode);
-      setTestCaseList(template.testCases);
+    }
+  };
+
+  const handleApplyPreset = (preset: typeof TOPIC_PRESETS[0]) => {
+    setTitle(preset.title);
+    setDescription(preset.description);
+    setTestCaseList(
+      preset.cases.map((c, i) => ({
+        id: `tc-preset-${Date.now()}-${i}`,
+        input: c.input,
+        expectedOutput: c.expectedOutput,
+        description: c.description,
+      }))
+    );
+    if (preset.starterCodes && preset.starterCodes[language]) {
+      setStarterCode(preset.starterCodes[language]);
     }
   };
 
@@ -94,7 +432,18 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
     setError('');
 
     try {
-      const generated = await generateTestCases(title, description, language);
+      // Only send sample if explicitly filled in the guidance section
+      const sampleInput = guideSampleInput.trim() ? guideSampleInput.trim() : undefined;
+      const sampleOutput = guideSampleOutput.trim() ? guideSampleOutput.trim() : undefined;
+
+      const generated = await generateTestCases(
+        title,
+        description,
+        language,
+        sampleInput,
+        sampleOutput
+      );
+
       if (generated.starterCode) {
         setStarterCode(generated.starterCode);
       }
@@ -109,7 +458,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
         );
       }
     } catch (err: any) {
-      setError('AI generation unavailable. Using default templates.');
+      setError('AI generation unavailable. Using smart default templates.');
     } finally {
       setIsGeneratingAI(false);
     }
@@ -130,7 +479,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
     // Verify all test cases have input and expected output
     const hasEmptyField = testCaseList.some(tc => !tc.input.trim() || !tc.expectedOutput.trim());
     if (hasEmptyField) {
-      setError('All test cases must specify both an Input and an Expected Output.');
+      setError('All test cases must specify both Standard Input and Expected Output.');
       return;
     }
 
@@ -186,14 +535,14 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
         border: '1px solid var(--gray-800)',
         borderRadius: 14,
         width: '100%',
-        maxWidth: 620,
-        maxHeight: '90vh',
+        maxWidth: 720,
+        maxHeight: '92vh',
         overflowY: 'auto',
         padding: 28,
         boxShadow: '0 24px 50px rgba(0,0,0,0.6)',
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{
               width: 32,
@@ -238,6 +587,43 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Quick Problem Presets */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid var(--gray-800)',
+            borderRadius: 8,
+            padding: '10px 12px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <Layers size={13} style={{ color: 'var(--indigo-400)' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-300)' }}>
+                Quick Presets (Starter template skeletons & test cases)
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {TOPIC_PRESETS.map(preset => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handleApplyPreset(preset)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    background: title === preset.title ? 'var(--indigo-500-20)' : 'var(--gray-800)',
+                    border: `1px solid ${title === preset.title ? 'var(--indigo-500)' : 'var(--gray-700)'}`,
+                    color: title === preset.title ? 'var(--indigo-300)' : 'var(--gray-300)',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Title & AI Generate Button */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
@@ -246,6 +632,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                 type="button"
                 onClick={handleGenerateWithAI}
                 disabled={isGeneratingAI}
+                title="AI analyzes your Title and Description to generate starter skeleton code and full edge test cases"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -262,14 +649,14 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                 }}
               >
                 {isGeneratingAI ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-                {isGeneratingAI ? 'Generating...' : 'Auto-generate test cases'}
+                {isGeneratingAI ? 'Analyzing & Generating...' : 'Auto-generate test cases'}
               </button>
             </div>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Reverse a String, Two Sum, Palindrome Check"
+              placeholder="e.g. Smallest index with digit sum equal to index, Two Sum, Kadane"
               style={{
                 width: '100%',
                 background: 'var(--gray-950)',
@@ -292,7 +679,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Describe the input, expected behavior, and constraints..."
+              placeholder="Describe the input format, output format, and problem constraints..."
               rows={3}
               style={{
                 width: '100%',
@@ -307,6 +694,85 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
               }}
               required
             />
+          </div>
+
+          {/* Optional Sample Guidance for AI */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed var(--gray-800)',
+            borderRadius: 8,
+            padding: '10px 14px',
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowSampleGuidance(!showSampleGuidance)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--indigo-400)',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: 0,
+              }}
+            >
+              {showSampleGuidance ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              <span>Have a specific sample test case in mind? (Optional: guide AI with 1 example)</span>
+            </button>
+
+            {showSampleGuidance && (
+              <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--gray-400)', marginBottom: 4 }}>
+                    Sample Input (e.g., 3\n1 10 11)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={guideSampleInput}
+                    onChange={e => setGuideSampleInput(e.target.value)}
+                    placeholder="Enter sample stdin input..."
+                    style={{
+                      width: '100%',
+                      background: 'var(--gray-900)',
+                      border: '1px solid var(--gray-800)',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      color: 'var(--text-main)',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-mono)',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--gray-400)', marginBottom: 4 }}>
+                    Sample Expected Output (e.g., 1)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={guideSampleOutput}
+                    onChange={e => setGuideSampleOutput(e.target.value)}
+                    placeholder="Enter expected stdout result..."
+                    style={{
+                      width: '100%',
+                      background: 'var(--gray-900)',
+                      border: '1px solid var(--gray-800)',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      color: 'var(--green-400)',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-mono)',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Language & Duration */}
@@ -360,13 +826,18 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
 
           {/* Starter Code */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--gray-300)', marginBottom: 6 }}>
-              Starter Code
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-300)' }}>
+                Starter Code (Skeleton for Students)
+              </label>
+              <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>
+                Compiles once & executes test cases in milliseconds
+              </span>
+            </div>
             <textarea
               value={starterCode}
               onChange={e => setStarterCode(e.target.value)}
-              rows={4}
+              rows={6}
               style={{
                 width: '100%',
                 background: 'var(--gray-950)',
@@ -374,10 +845,11 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                 padding: '10px 14px',
                 borderRadius: 8,
                 color: 'var(--text-main)',
-                fontSize: 13,
+                fontSize: 12.5,
                 fontFamily: 'var(--font-mono)',
                 resize: 'vertical',
                 boxSizing: 'border-box',
+                lineHeight: 1.45,
               }}
             />
           </div>
@@ -390,7 +862,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                   Test Cases & Verification ({testCaseList.length})
                 </span>
                 <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--gray-500)' }}>
-                  Viewer code will be executed in a secure Docker sandbox and checked against these inputs and outputs.
+                  Inputs are piped into standard input (stdin). Outputs are captured from stdout and checked.
                 </p>
               </div>
               <button
@@ -414,7 +886,7 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {testCaseList.map((testCase, index) => (
                 <div
                   key={testCase.id}
@@ -422,10 +894,10 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                     background: 'var(--gray-950)',
                     border: '1px solid var(--gray-800)',
                     borderRadius: 8,
-                    padding: 12,
+                    padding: 14,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 8,
+                    gap: 10,
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -450,48 +922,59 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
                     )}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {/* Multi-line Standard Input & Output */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: 11, color: 'var(--gray-500)', marginBottom: 4 }}>
-                        Input
-                      </label>
-                      <input
-                        type="text"
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-400)' }}>
+                          Standard Input (stdin)
+                        </label>
+                        <span style={{ fontSize: 10, color: 'var(--gray-500)' }}>Multi-line supported</span>
+                      </div>
+                      <textarea
+                        rows={3}
                         value={testCase.input}
                         onChange={e => handleUpdateTestCase(testCase.id, 'input', e.target.value)}
-                        placeholder='e.g. "hello"'
+                        placeholder="e.g.&#10;4 9&#10;2 7 11 15"
                         style={{
                           width: '100%',
                           background: 'var(--gray-900)',
                           border: '1px solid var(--gray-800)',
-                          padding: '6px 10px',
+                          padding: '8px 10px',
                           borderRadius: 6,
                           color: 'var(--text-main)',
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontFamily: 'var(--font-mono)',
+                          resize: 'vertical',
                           boxSizing: 'border-box',
+                          lineHeight: 1.4,
                         }}
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: 11, color: 'var(--gray-500)', marginBottom: 4 }}>
-                        Expected Output
-                      </label>
-                      <input
-                        type="text"
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--green-400)' }}>
+                          Expected Output (stdout)
+                        </label>
+                        <span style={{ fontSize: 10, color: 'var(--gray-500)' }}>Exact match</span>
+                      </div>
+                      <textarea
+                        rows={3}
                         value={testCase.expectedOutput}
                         onChange={e => handleUpdateTestCase(testCase.id, 'expectedOutput', e.target.value)}
-                        placeholder='e.g. "olleh"'
+                        placeholder="e.g.&#10;0 1"
                         style={{
                           width: '100%',
                           background: 'var(--gray-900)',
                           border: '1px solid var(--gray-800)',
-                          padding: '6px 10px',
+                          padding: '8px 10px',
                           borderRadius: 6,
                           color: 'var(--green-400)',
-                          fontSize: 12.5,
+                          fontSize: 12,
                           fontFamily: 'var(--font-mono)',
+                          resize: 'vertical',
                           boxSizing: 'border-box',
+                          lineHeight: 1.4,
                         }}
                       />
                     </div>
@@ -499,13 +982,13 @@ export function CreateChallengeModal({ courseId, onClose, onCreated }: CreateCha
 
                   <div>
                     <label style={{ display: 'block', fontSize: 11, color: 'var(--gray-500)', marginBottom: 4 }}>
-                      Description
+                      Case Description / Boundary Focus
                     </label>
                     <input
                       type="text"
                       value={testCase.description}
                       onChange={e => handleUpdateTestCase(testCase.id, 'description', e.target.value)}
-                      placeholder="e.g. Reversing standard alphabetic string"
+                      placeholder="e.g. Standard case, Negative numbers, Empty array, Duplicates"
                       style={{
                         width: '100%',
                         background: 'var(--gray-900)',
