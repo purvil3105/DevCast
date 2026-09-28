@@ -55,7 +55,15 @@ export function VideoPlayer({ hlsUrl, isLive = false, streamEnded = false, onTim
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 30,
+        backBufferLength: 10,
+        liveSyncDurationCount: 2,
+        liveMaxLatencyDurationCount: 3,
+        maxLiveSyncPlaybackRate: 1.15,
+        liveDurationInfinity: true,
+        highBufferWatchdogPeriod: 1,
+        manifestLoadingTimeOut: 4000,
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 4000,
       });
 
       hls.loadSource(effectiveUrl);
