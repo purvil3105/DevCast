@@ -91,6 +91,9 @@ services:
       WS_PUBLIC_URL: wss://${DOMAIN}
       SANDBOX_URL: http://sandbox:4000
       VOD_BASE_URL: https://${DOMAIN}/vod
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
     volumes:
       - /opt/devcast/data/hls:/var/hls:ro
     networks:

@@ -216,7 +216,7 @@ function SessionRow({ stream, onOpen }: { stream: StreamSummary; onOpen: (id: st
       {/* Thumbnail */}
       <div style={{ width: 96, height: 56, flexShrink: 0, borderRadius: 'var(--r-sm)', overflow: 'hidden', position: 'relative', background: 'var(--gray-800)' }}>
         {stream.thumbnailUrl ? (
-          <img src={stream.thumbnailUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={stream.thumbnailUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(140deg, var(--indigo-800), var(--gray-900))' }} />
         )}

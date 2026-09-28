@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Play, Users, Clock, Video } from 'lucide-react';
 import type { StreamSummary } from '../lib/api';
 import { relativeTime } from '../lib/format';
@@ -19,6 +20,7 @@ export function StreamCard({ stream, index = 0, onOpen }: StreamCardProps) {
   const isLive = stream.status === 'LIVE';
   const isEnded = stream.status === 'ENDED';
   const cardClass = `stream-card${isLive ? ' is-live' : ''}${isEnded ? ' is-ended' : ''}`;
+  const [imgError, setImgError] = useState(false);
 
   // Deterministic gradient fallback (varies by position for visual rhythm).
   const h1 = 250 + (index % 5) * 12;
@@ -38,11 +40,12 @@ export function StreamCard({ stream, index = 0, onOpen }: StreamCardProps) {
     <div className={cardClass} onClick={() => onOpen(stream.id)} style={{ height: '100%' }}>
       {/* Thumbnail */}
       <div style={{ height: 176, position: 'relative', overflow: 'hidden' }}>
-        {stream.thumbnailUrl ? (
+        {stream.thumbnailUrl && !imgError ? (
           <img
             className="thumb-zoom"
             src={stream.thumbnailUrl}
             alt=""
+            onError={() => setImgError(true)}
             style={{
               position: 'absolute',
               inset: 0,

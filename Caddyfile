@@ -12,6 +12,11 @@
         }
     }
 
+    # ── Uploaded Thumbnails / Assets ────────────────────────
+    handle /uploads/* {
+        reverse_proxy api:3000
+    }
+
     # ── Socket.IO WebSocket ──────────────────────────────────
     handle /socket.io/* {
         reverse_proxy ws:3001 {
