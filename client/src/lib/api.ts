@@ -325,8 +325,110 @@ export async function listChallengeSessions() {
 }
 
 // ─── Reactions ───────────────────────────────────────────
-export async function sendReaction(streamId: string, emoji: string) {
-  const { data } = await api.post(`/streams/${streamId}/reaction`, { emoji });
+// ─── Creator Studio ──────────────────────────────────────
+export interface StudioOverviewData {
+  totalStreams: number;
+  totalViews: number;
+  avgViewers: number;
+  totalSubmissions: number;
+  activeStream: {
+    id: string;
+    title: string;
+    status: string;
+    startedAt: string | null;
+    thumbnailUrl: string | null;
+    course: { id: string; title: string };
+    viewerCount: number;
+    durationSeconds: number | null;
+  } | null;
+  recentSessions: Array<{
+    id: string;
+    title: string;
+    status: string;
+    startedAt: string | null;
+    endedAt: string | null;
+    durationSeconds: number | null;
+    peakViewers: number;
+    thumbnailUrl: string | null;
+    courseTitle: string;
+    submissionCount: number;
+  }>;
+}
+
+export interface StudioStreamsResponse {
+  streams: Array<{
+    id: string;
+    title: string;
+    status: 'SCHEDULED' | 'LIVE' | 'ENDED';
+    startedAt: string | null;
+    endedAt: string | null;
+    durationSeconds: number | null;
+    peakViewers: number;
+    thumbnailUrl: string | null;
+    course: { id: string; title: string };
+    challengeCount: number;
+    submissionCount: number;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface StudioStreamDetailResponse {
+  stream: {
+    id: string;
+    title: string;
+    status: string;
+    startedAt: string | null;
+    endedAt: string | null;
+    durationSeconds: number | null;
+    peakViewers: number;
+    thumbnailUrl: string | null;
+    streamKey?: string;
+    course: {
+      id: string;
+      title: string;
+      slug: string;
+    };
+  };
+  stats: {
+    peakViewers: number;
+    totalSubmissions: number;
+    challengesFired: number;
+    avgSolveRate: number;
+  };
+  challenges: Array<{
+    sessionId: string;
+    challengeId: string;
+    title: string;
+    description: string;
+    language: string;
+    startedAt: string | null;
+    endedAt: string | null;
+    status: string;
+    durationSeconds: number;
+    submissionCount: number;
+    passedCount: number;
+    solveRate: number;
+    avgExecutionTimeMs: number | null;
+  }>;
+}
+
+export async function getStudioOverview(): Promise<StudioOverviewData> {
+  const { data } = await api.get('/studio/overview');
+  return data;
+}
+
+export async function getStudioStreams(page = 1, limit = 10): Promise<StudioStreamsResponse> {
+  const { data } = await api.get('/studio/streams', { params: { page, limit } });
+  return data;
+}
+
+export async function getStudioStreamDetail(id: string): Promise<StudioStreamDetailResponse> {
+  const { data } = await api.get(`/studio/streams/${id}`);
   return data;
 }
 

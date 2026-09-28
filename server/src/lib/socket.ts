@@ -86,12 +86,21 @@ export function initSocketIO(httpServer: HttpServer): Server {
 
     // Broadcast updated viewer count
     const viewerCount = await redis.hget(`session:${streamId}`, 'viewer_count');
+    const parsedCount = parseInt(viewerCount || '0', 10);
     io.to(`stream:${streamId}`).emit('viewer_count_update', {
       type: 'viewer_count_update',
       streamId,
-      payload: { count: parseInt(viewerCount || '0', 10) },
+      payload: { count: parsedCount },
       serverTime: Date.now(),
     });
+
+    // Flush peak viewers to DB if current count is new peak
+    if (parsedCount > 0) {
+      prisma.stream.updateMany({
+        where: { id: streamId, peakViewers: { lt: parsedCount } },
+        data: { peakViewers: parsedCount },
+      }).catch(() => {});
+    }
 
     // ─── Client Messages ──────────────────────────────────
     socket.on('reconnect_request', async (data: { lastSeq?: number }) => {
@@ -154,6 +163,13 @@ export function initSocketIO(httpServer: HttpServer): Server {
           payload: { count: actualCount },
           serverTime: Date.now(),
         });
+
+        if (actualCount > 0) {
+          prisma.stream.updateMany({
+            where: { id: stream.id, peakViewers: { lt: actualCount } },
+            data: { peakViewers: actualCount },
+          }).catch(() => {});
+        }
       }
     } catch (err) {
       console.error('Reconciliation error:', err);

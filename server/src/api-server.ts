@@ -16,6 +16,7 @@ import submissionRoutes from './routes/submissions';
 import courseRoutes from './routes/courses';
 import uploadRoutes from './routes/uploads';
 import leaderboardRoutes from './routes/leaderboard';
+import studioRoutes from './routes/studio';
 
 async function main() {
   const app = express();
@@ -85,6 +86,7 @@ async function main() {
   app.use('/api/submissions', submissionRoutes);
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/leaderboard', leaderboardRoutes);
+  app.use('/api/studio', studioRoutes);
 
   // Global Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

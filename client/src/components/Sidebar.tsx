@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Radio, Terminal, Trophy, Settings, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Radio, Terminal, Trophy, Settings, Sun, Moon, Clapperboard } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
   onNavigate: (view: string) => void;
   userInitial?: string;
   userName?: string;
+  userRole?: string;
 }
 
-export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName = 'My Account' }: SidebarProps) {
+export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName = 'My Account', userRole }: SidebarProps) {
   const [isLightMode, setIsLightMode] = useState(() => {
     return localStorage.getItem('devcast_theme') === 'light';
   });
@@ -75,18 +76,29 @@ export function Sidebar({ currentView, onNavigate, userInitial = 'U', userName =
           active={currentView === 'stream'}
           onClick={() => onNavigate('stream')}
         />
-        <SidebarItem
-          icon={<Terminal size={19} />}
-          label="Challenges"
-          active={currentView === 'challenges'}
-          onClick={() => onNavigate('challenges')}
-        />
-        <SidebarItem
-          icon={<Trophy size={19} />}
-          label="Leaderboards"
-          active={currentView === 'leaderboards'}
-          onClick={() => onNavigate('leaderboards')}
-        />
+        {userRole === 'INSTRUCTOR' ? (
+          <SidebarItem
+            icon={<Clapperboard size={19} />}
+            label="Creator Studio"
+            active={currentView === 'studio'}
+            onClick={() => onNavigate('studio')}
+          />
+        ) : (
+          <>
+            <SidebarItem
+              icon={<Terminal size={19} />}
+              label="Challenges"
+              active={currentView === 'challenges'}
+              onClick={() => onNavigate('challenges')}
+            />
+            <SidebarItem
+              icon={<Trophy size={19} />}
+              label="Leaderboards"
+              active={currentView === 'leaderboards'}
+              onClick={() => onNavigate('leaderboards')}
+            />
+          </>
+        )}
       </nav>
 
       {/* Bottom section */}

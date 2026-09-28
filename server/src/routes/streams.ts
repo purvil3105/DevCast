@@ -427,6 +427,58 @@ router.post(
 );
 
 /**
+ * POST /api/streams/rtmp/done
+ * nginx-rtmp `on_publish_done` callback. Fires when the broadcaster disconnects
+ * (e.g. OBS stops streaming). If the stream hasn't been ended by the instructor yet,
+ * this auto-ends it and notifies all viewers.
+ */
+router.post(
+  '/rtmp/done',
+  express.urlencoded({ extended: false }),
+  async (req: Request, res: Response) => {
+    try {
+      const streamKey = req.body?.name;
+      if (!streamKey || typeof streamKey !== 'string') {
+        res.status(200).send('OK');
+        return;
+      }
+
+      const stream = await prisma.stream.findUnique({
+        where: { streamKey },
+        select: { id: true, status: true },
+      });
+
+      if (!stream) {
+        res.status(200).send('OK');
+        return;
+      }
+
+      // Only auto-end if still LIVE (instructor may have already ended it)
+      if (stream.status === 'LIVE') {
+        await prisma.stream.update({
+          where: { id: stream.id },
+          data: { status: 'ENDED', endedAt: new Date() },
+        });
+
+        // Clean up Redis
+        await redis.del(`session:${stream.id}`);
+
+        // Notify viewers
+        const { publishStreamEvent } = await import('../lib/socket');
+        await publishStreamEvent(stream.id, 'stream_end', {});
+
+        console.log(`[RTMP] Auto-ended stream ${stream.id} (OBS disconnected)`);
+      }
+
+      res.status(200).send('OK');
+    } catch (err) {
+      console.error('RTMP done callback error:', err);
+      res.status(200).send('OK'); // Always return 200 to nginx
+    }
+  }
+);
+
+/**
  * PATCH /api/streams/by-key/:streamKey/vod-ready
  * Update a stream with its recorded VOD URL (called by media server/S3 uploader).
  */

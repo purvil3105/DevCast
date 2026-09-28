@@ -337,6 +337,7 @@ export function StreamPage() {
         <VideoPlayer 
           hlsUrl={state.hlsUrl} 
           isLive={state.status === 'live'} 
+          streamEnded={state.status === 'ended'}
           onTimeUpdate={isVod ? setVideoTime : undefined} 
         >
           <FloatingReactionsOverlay particles={particles} />

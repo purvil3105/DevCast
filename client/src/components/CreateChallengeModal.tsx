@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Code2, Plus, Trash2, Sparkles, Loader2, Layers, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Code2, Plus, Trash2, Sparkles, Loader2, Layers, ChevronDown, ChevronUp } from 'lucide-react';
 import { createChallenge, generateTestCases } from '../lib/api';
 
 interface CreateChallengeModalProps {

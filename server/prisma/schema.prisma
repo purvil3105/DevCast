@@ -62,6 +62,7 @@ model Stream {
   status    StreamStatus @default(SCHEDULED)
   startedAt DateTime?    @map("started_at")
   endedAt   DateTime?    @map("ended_at")
+  peakViewers Int        @default(0) @map("peak_viewers")
 
   course            Course             @relation(fields: [courseId], references: [id])
   challengeSessions ChallengeSession[]

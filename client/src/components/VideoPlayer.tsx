@@ -5,6 +5,7 @@ import { Play, Pause, Settings, Maximize, Minimize, Volume2, VolumeX, Check } fr
 interface VideoPlayerProps {
   hlsUrl: string | null;
   isLive?: boolean;
+  streamEnded?: boolean;
   onTimeUpdate?: (currentTime: number) => void;
   children?: React.ReactNode;
 }
@@ -23,7 +24,7 @@ interface QualityLevel {
  * - Fullscreen toggle
  * - Quality selector (Auto + available HLS levels)
  */
-export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: VideoPlayerProps) {
+export function VideoPlayer({ hlsUrl, isLive = false, streamEnded = false, onTimeUpdate, children }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -248,7 +249,9 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: 
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(135deg, var(--gray-900) 0%, #1a1a2e 50%, var(--gray-900) 100%)',
+          background: streamEnded
+            ? 'linear-gradient(135deg, #1a1a2e 0%, #0f0f23 50%, #1a1a2e 100%)'
+            : 'linear-gradient(135deg, var(--gray-900) 0%, #1a1a2e 50%, var(--gray-900) 100%)',
           opacity: 0.8,
         }} />
         <div style={{
@@ -268,26 +271,53 @@ export function VideoPlayer({ hlsUrl, isLive = false, onTimeUpdate, children }: 
           gap: 16,
           zIndex: 1,
         }}>
-          <div style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            background: 'var(--indigo-500-10)',
-            border: '2px solid var(--indigo-500-30)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Play size={28} style={{ color: 'var(--indigo-400)', marginLeft: 3 }} />
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--gray-400)', fontSize: 15, fontWeight: 500 }}>
-              {isLive ? 'Connecting to stream...' : 'Stream Preview'}
-            </p>
-            <p style={{ color: 'var(--gray-600)', fontSize: 13, marginTop: 4 }}>
-              {isLive ? 'The live stream will appear here' : 'Waiting for instructor to go live'}
-            </p>
-          </div>
+          {streamEnded ? (
+            <>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '2px solid rgba(239, 68, 68, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Pause size={28} style={{ color: '#ef4444' }} />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ color: 'var(--gray-300)', fontSize: 16, fontWeight: 600 }}>
+                  Stream Has Ended
+                </p>
+                <p style={{ color: 'var(--gray-500)', fontSize: 13, marginTop: 4 }}>
+                  The instructor has ended this live session
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'var(--indigo-500-10)',
+                border: '2px solid var(--indigo-500-30)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Play size={28} style={{ color: 'var(--indigo-400)', marginLeft: 3 }} />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ color: 'var(--gray-400)', fontSize: 15, fontWeight: 500 }}>
+                  {isLive ? 'Connecting to stream...' : 'Stream Preview'}
+                </p>
+                <p style={{ color: 'var(--gray-600)', fontSize: 13, marginTop: 4 }}>
+                  {isLive ? 'The live stream will appear here' : 'Waiting for instructor to go live'}
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {isLive && (

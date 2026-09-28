@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Radio, CalendarClock, Plus, Video, Users, ArrowRight, Trophy,
-  Clock, PlayCircle, Presentation, History, Layers, Terminal,
+  Radio, CalendarClock, Plus, Video, Users, ArrowRight,
+  Clock, PlayCircle, Presentation, History, Layers, Clapperboard,
 } from 'lucide-react';
 import { listStreams, getStoredUser, type StreamSummary } from '../../lib/api';
 import { relativeTime } from '../../lib/format';
@@ -57,9 +57,9 @@ export function InstructorDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   const quickActions = [
-    { icon: <Plus size={18} />, label: 'Create stream', desc: 'Set up a new session', onClick: () => setShowCreateModal(true), primary: true },
-    { icon: <Terminal size={18} />, label: 'Browse challenges', desc: 'Review the problem library', onClick: () => navigate('/challenges'), primary: false },
-    { icon: <Trophy size={18} />, label: 'Leaderboards', desc: 'See how learners rank', onClick: () => navigate('/leaderboards'), primary: false },
+    { icon: <Plus size={18} />, label: 'Create stream', desc: 'Set up a new broadcast session', onClick: () => setShowCreateModal(true), primary: true },
+    { icon: <Clapperboard size={18} />, label: 'Creator Studio', desc: 'Channel analytics & live telemetry', onClick: () => navigate('/studio'), primary: false },
+    { icon: <History size={18} />, label: 'Stream History', desc: 'Past broadcasts & challenge stats', onClick: () => navigate('/studio/streams'), primary: false },
   ];
 
   if (loading) return <InstructorSkeleton />;
@@ -178,8 +178,8 @@ export function InstructorDashboard() {
             subtitle="Sessions you’ve wrapped up"
             icon={<History size={18} />}
             action={
-              <button onClick={() => navigate('/live')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: 'var(--indigo-400)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                All sessions <ArrowRight size={14} />
+              <button onClick={() => navigate('/studio/streams')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: 'var(--indigo-400)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                Studio archives <ArrowRight size={14} />
               </button>
             }
           />

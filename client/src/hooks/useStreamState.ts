@@ -174,6 +174,7 @@ function streamReducer(state: StreamState, action: StreamAction): StreamState {
       return {
         ...state,
         status: 'ended',
+        hlsUrl: null,
         currentChallenge: null,
       };
 
